@@ -171,7 +171,7 @@ let atkHeavySheet;
 let attackType = "";   // "", "light", "heavy"
 let attackFrame = 0;
 let attackTimer = 0;
-const attackFrameSpeed = 5; // draw frames per sprite frame
+const attackFrameSpeed = 3; // draw frames per sprite frame
 
 // mage projectile system
 let mageProjectiles = [];
@@ -2120,7 +2120,7 @@ function updatePlayer() {
   // hollow purple charge tick
   if (isCharging && selectedClass === "Mage") {
     chargeTime = min(chargeTime + 1, maxChargeTime);
-    magic = max(0, magic - 0.15);
+    magic = max(0, magic - 0.25);
     if (maxChargeTime == chargeTime) {
       magic = 0;
     }
@@ -2159,6 +2159,12 @@ function updatePlayer() {
       }
       if (prev < maxStamina && stamina >= maxStamina && sfxBarFull) sfxBarFull.play();
     }
+  }
+
+  if (HP < maxHP) {
+      let prevHP = HP;
+      HP = min(maxHP, HP + 0.03);
+      if (prevHP < maxHP && HP >= maxHP && sfxBarFull) sfxBarFull.play();
   }
 
   // footstep SFX
@@ -2225,12 +2231,12 @@ function drawAttack() {
   let effY = playerY + drawSize / 2 - effH / 2;
 
   // melee overlaps the player body; mage pushes clearly in front for a casting feel
-  let xOff = selectedClass === "Mage" ? drawSize + 20 : drawSize * 0.4;
+  let xOff = selectedClass === "Mage" ? drawSize + 20 : drawSize * .8;
 
   push();
   if (facingLeft) {
     // mirror xOff to the left: translate to the right edge of the effect then flip
-    translate(screenX - xOff + effW, effY);
+    translate(screenX + xOff - effW / 4, effY);
     scale(-1, 1);
     image(sheet, 0, 0, effW, effH, sx, 0, frameWidth, info.srcH);
   } else {
@@ -2246,7 +2252,7 @@ function spawnLightMageProjectile() {
     y: playerY + drawSize / 2,
     velX: dir * 9,
     type: "light",
-    damage: 15,
+    damage: 30,
     drawW: 80,
     drawH: 80,
     maxDist: 340,
@@ -2288,7 +2294,7 @@ function spawnLightMeleeAttack() {
   let info = getAtkInfo("light");
   meleeAttacks.push({
     type: "light",
-    damage: 15,
+    damage: 20,
     dir: dir,
     x: playerX + (dir > 0 ? drawSize * 0.4 : -(info.drawW + drawSize * 0.4)),
     y: playerY + drawSize / 2 - info.drawH / 2,
@@ -2300,7 +2306,7 @@ function spawnLightMeleeAttack() {
   attackFrame = 0;
   attackTimer = 0;
   sfxLightMelee.play();
-  stamina = max(0, stamina - 15);
+  stamina = max(0, stamina - 25);
 }
 
 function spawnHeavyMeleeAttack() {
@@ -2308,7 +2314,7 @@ function spawnHeavyMeleeAttack() {
   let info = getAtkInfo("heavy");
   meleeAttacks.push({
     type: "heavy",
-    damage: 30,
+    damage: 40,
     dir: dir,
     x: playerX + (dir > 0 ? drawSize * 0.4 : -(info.drawW + drawSize * 0.4)),
     y: playerY + drawSize / 2 - info.drawH / 2,
@@ -2320,7 +2326,7 @@ function spawnHeavyMeleeAttack() {
   attackFrame = 0;
   attackTimer = 0;
   sfxHeavyMelee.play();
-  stamina = max(0, stamina - 25);
+  stamina = max(0, stamina - 50);
 }
 
 function updateMeleeAttacks() {

@@ -438,8 +438,8 @@ class Enemy extends Entity {
                     "stillFrame": 2,
                     "atkSizeDiff": 300
                 }
-                this.health = 150;
-                this.maxHealth = 150;
+                this.health = 200;
+                this.maxHealth = 200;
                 this.ableToJump = false;
                 this.attackSpeed = 0.03
                 break;
@@ -462,8 +462,8 @@ class Enemy extends Entity {
                     "stillFrame": 0,
                     "atkSizeDiff": 0
                 }
-                this.health = 100;
-                this.maxHealth = 100;
+                this.health = 300;
+                this.maxHealth = 300;
                 this.ableToJump = false;
                 this.attackSpeed = 0.01
                 break;
@@ -876,7 +876,7 @@ function enemyHitboxer(enemyX, enemyY, enemySize, enemyType, enemyFrame, directi
     //if (Math.abs(playerX - cameraX - enemyX) > 30) 
     let damage
     if (enemyType === "sml") {
-        damage = 10
+        damage = 15
         if (floor(enemyFrame) === 2) {
             sizeCutX = enemyX
             if (direction == -1) {
@@ -901,7 +901,7 @@ function enemyHitboxer(enemyX, enemyY, enemySize, enemyType, enemyFrame, directi
             }
         }
     } else if (enemyType === "med") {
-        damage = 15
+        damage = 20
         if (enemyFrame > 1 && enemyFrame < 9) {
             sizeCutY = ((5 * enemySize) / 29);
             sizeCutX = (3 * enemySize) / 4;
@@ -913,7 +913,7 @@ function enemyHitboxer(enemyX, enemyY, enemySize, enemyType, enemyFrame, directi
             }
         }
     } else if (enemyType === "lar") {
-        damage = 30
+        damage = 35
         if (enemyFrame > 2 && enemyFrame < 5) {
             fill(255, 0, 0, 100)
             //rect(enemyX, enemyY, enemySize, (enemySize * 7) / 8)
