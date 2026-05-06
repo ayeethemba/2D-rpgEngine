@@ -5,7 +5,7 @@
 20
 #Trader: Eh, figured as much. Doesn't seem like the type of thing that someone wears for the fun of it after all, heh.
 #Player: Who are you?
-#Trader Pescae: My names Pescae, I'm in the trade of trading. I like to give people a little piece of the world they've never seen, and free them of a little piece of themselves in exchange.
+#Trader: My names Pescae, I'm in the trade of trading. I like to give people a little piece of the world they've never seen, and free them of a little piece of themselves in exchange.
 =Player: [Little wordy for a slogan, but I like it|The little pieces of themselves they don't want?]
 12
 14

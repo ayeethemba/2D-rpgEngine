@@ -15,12 +15,20 @@ function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
 function frameCalls() {
 
     for (i = 0; i < entityCount; i++) {
+        if (i < entities.length - 1 && entities[i].constructor === Dialogue && entities[i + 1].constructor !== Dialogue) {
+            let replacement = entities[i]
+            entities[i] = entities[i + 1]
+            entities[i + 1] = replacement
+        }
         if (entities[i].isAlive()) {
             if (!(isDialogue)) {
                 if (playerJustLanded && entities[i].constructor === Enemy && entities[i].isGrounded()) {
                     entities[i].setAbleToJump();
                 }
                 entities[i].frameChange();
+            } else if (entities[i].constructor === NPC) {
+                entities[i].showSprite()
+                
             } else if (entities[i].constructor === Dialogue) {
                 entities[i].frameChange();
             }
@@ -48,6 +56,7 @@ function frameCalls() {
             }
         }
     }
+    if (isDialogue) drawIntroDialogueBox();
     playerJustLanded = false;
 
 }
@@ -178,6 +187,69 @@ class Dialogue extends Entity {
     }
 }
 
+class NPC extends Entity {
+    constructor(index, name, xPos, sizeRatio, currGameState) {
+        super()
+        this.setSprite()
+        this.index = index
+        this.name = name
+        this.onScreen = true
+        this.x = xPos
+        this.size = 320 * sizeRatio
+        this.talkedTo = false;
+        this.currGameState = currGameState
+        //this.img0 = npcSprites;
+    }
+
+    setSprite() {
+        this.image = loadImage("sprites/sprint2/npcs_320x320.png");
+    }
+
+    isAlive() {
+        return this.onScreen
+    }
+
+    showSprite() {
+        this.frameChange()
+    }
+
+    frameChange() {
+        if (gameState === this.currGameState) {
+            image(
+                            this.image, //image
+                            this.x - cameraX, //x
+                            groundY - (this.size) + drawSize + 5, //y
+                            this.size, //img h
+                            this.size, //img w
+                            320 * this.index, //correct frame
+                            0, //i dont know what this variable is
+                            320, //i dont know
+                            320 //i dont know but it works
+            )
+            //image(this.image, this.x - cameraX, groundY - 320)
+            //text(entities[entities.length - 1].constructor === Dialogue, this.x - cameraX + (this.size / 2), groundY + drawSize - this.size - 100)
+            if (abs(playerY - groundY) < 20 && abs(this.x - playerX) < GAME_W / 10 && !this.talkedTo) {
+                fill(50, 50, 50)
+                rect(this.x - cameraX, groundY + drawSize - this.size - (GAME_H / 60), this.size, this.size / 5)
+                fill(255, 255, 255)
+                textSize(10)
+                textAlign(CENTER, CENTER)
+                text("S to speak", this.x - cameraX + (this.size / 2), groundY + drawSize - this.size)
+                if (isBindingDown("interact")) {
+                    
+                    initDiaFile(this.name)
+                    this.talkedTo = true;
+
+                }
+            }
+        } else {
+            this.onScreen = false
+        }
+
+    }
+
+}
+
 //class describing enemies
 class Enemy extends Entity {
 
@@ -245,12 +317,23 @@ class Enemy extends Entity {
             this.yVel = this.deathJump;
             this.y += this.yVel;
             this.state = "jumping";
+            if (this.deathJump == -5) {
+                
+                if (this.type === "sml") {
+                    magic += 15
+                    stamina += 5
+                } else if (this.type === "med") {
+                    magic += 25
+                    stamina += 25
+                } else if (this.type === "lar") {
+                    magic += 40
+                    stamina += 40
+                }
+            }
             this.deathJump += 0.1;
             this.deathJump = constrain(this.deathJump, -5, 3.1);
             if (this.deathJump > 3) {
                 enemiesAlive--;
-                magic += 15
-                stamina += 15
                 if (enemiesAlive < 0) enemiesAlive = 0;
                 return false;
             }
@@ -640,24 +723,16 @@ class Enemy extends Entity {
                     stopOrNot = floor(random(3000))
                 }
                 if (stopOrNot < 2) {
-                    if (this.type === "lar") {
-                        this.timer = floor(random(350) - random(300))
-                    } else {
-                        this.timer = floor(random(250) - random(100))
-                    }
+                    this.timer = floor(random(250) - random(100))
                     this.case = "still"
                 } else if (stopOrNot < 10) {
-                    if (this.type === "lar") {
-                        this.timer = floor(random(150) - random(100))
-                    } else {
-                        this.timer = floor(random(100) - random(50))
-                    }
+                    this.timer = floor(random(100) - random(50))
                     this.case = "still"
                 }
             } else {
                 this.timer--;
             }
-        } else if ((playerX + attackDistance + (drawSize / 2)) < this.x) {
+        } else if ((playerX + (drawSize / 2)) < this.x) {
             if (this.state === "attack" && this.enemy_frame > 0) {
                 this.enemy_frame = 0;
             }
@@ -771,6 +846,10 @@ function enemyHitboxCheck(hitX, hitY, hitW, hitH, damage) {
     hitY < playerY + drawSize &&
     hitY + hitH > playerY) {
         if (playerCanBeHurt) {
+            hurtSound.rate(1.3)
+            hurtSound.play()
+            hurtSound2.rate(0.8)
+            hurtSound2.play()
             decrementHealthBy(damage);
             if (damage > 25) {
                 velY = -16

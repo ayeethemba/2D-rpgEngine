@@ -18,9 +18,13 @@ let testText = ""
 let canSprint = true;
 let sprintSound;
 let enemyWaves = 0;
+let isFocusing
 
 let musicEnemies;
 let musicBoss
+let hurtSound
+let hurtSound2
+let chargingSound
 let musicTown
 let helped = false;
 let playerLaunched = false;
@@ -83,7 +87,9 @@ const KEYMAP_ACTIONS = [
   { id: "moveRight",   label: "Move Right"   },
   { id: "heavyAttack", label: "Heavy Attack" },
   { id: "lightAttack", label: "Light Attack" },
-  { id: "sprint", label: "Sprint"}
+  { id: "sprint", label: "Sprint"},
+  { id: "focus", label: "Focus"},
+  { id: "interact", label: "Interact"}
 ];
 
 let isDialogue = false;
@@ -610,6 +616,9 @@ function preload() {
   town3Sprite = loadImage("sprites/sprint5/townLevel3.png");
   town4Sprite = loadImage("sprites/sprint5/townLevel4.png");
   
+  chargingSound = loadSound("sounds/charging.mp3");
+  hurtSound = loadSound("sounds/hurt.wav");
+  hurtSound2 = loadSound("sounds/hurt2.mp3");
   sfxLightMelee = loadSound("sounds/light swing.mp3");
   sfxHeavyMelee = loadSound("sounds/heavy swing.mp3");
   sfxLightMage  = loadSound("sounds/light spell.mp3");
@@ -643,7 +652,10 @@ sfxTrack = [
   { sound: sfxWalking,    base: 0.35 },
   { sound: sfxBarFull,    base: 0.5 },
   { sound: sfxTextLoop,   base: 0.2 },
-  { sound : sprintSound,  base: 0.4}
+  { sound : sprintSound,  base: 0.4},
+  { sound : hurtSound, base: 0.2},
+  { sound : hurtSound2, base: 2.0},
+  { sound : chargingSound, base: 0.5}
 ];
 }
 
@@ -700,9 +712,10 @@ function draw() {
       }
     }
     if (enemyWaves == 0 && playerX > worldWidth / 4) {
-      spawnEnemy("lar", "right")
+      //spawnEnemy("lar", "right")
       //spawnEnemy("med", "right")
       enemyWaves++;
+      //initTownLevel()
     }
     if (playerX > worldWidth - (worldWidth / 16)) {
       playerX = 10;
@@ -758,14 +771,7 @@ function draw() {
       enemyWaves++
     }
     if (playerX > 4960 - (width / 6) && enemiesAlive <= 0) {
-      worldWidth = 4400
-      playerX = 10
-      cameraX = 0;
-      groundY = (GAME_H * 7 / 8) - drawSize;
-      stopMusic();
-      musicTown.loop()
-      gameState = "townLevel"
-      updateUI();
+      initTownLevel();
     }
 
   } else if (gameState === "townLevel") {
@@ -852,6 +858,18 @@ function draw() {
   //text(timers.length, playerX - cameraX, height / 2)
   
   
+}
+
+function initTownLevel() {
+  worldWidth = 4400
+  playerX = 10
+  cameraX = 0;
+  groundY = (GAME_H * 7 / 8) - drawSize;
+  stopMusic();
+  musicTown.loop()
+  gameState = "townLevel"
+  let traderNPC = new NPC(0, "trader", 300, drawSize / 320, gameState)
+  updateUI();
 }
 
 function stopMusic() {
@@ -950,6 +968,26 @@ function keyPressed() {
   }
 
   if (isPaused) return;
+  if (keyPressMatches("focus", keyCode)) {
+    if (isCharging) {
+      fireHeavyMageProjectile();
+      isCharging = false;
+      chargeTime = 0;
+    }
+    if ((selectedClass === "Mage" && magic < maxMagic - 5) || ((selectedClass === "Melee" && stamina < maxStamina) && onGround)) {
+      isFocusing = true
+      chargingSound.rate(1.5)
+      chargingSound.loop()
+      magic = min(maxMagic, magic + 0.5);
+      stamina = min(maxStamina, stamina + 0.5);
+      return;
+    } else {
+      isFocusing = false
+      chargingSound.stop()
+    }
+  }
+  isFocusing = false
+  chargingSound.stop()
 
   if (keyPressMatches("jump", keyCode)) {
     tryJump();
@@ -1020,6 +1058,10 @@ function keyReleased() {
     fireHeavyMageProjectile();
     isCharging = false;
     chargeTime = 0;
+  }
+  if (keyPressMatches("focus", keyCode) && isFocusing) {
+    isFocusing = false
+    chargingSound.stop()
   }
 }
 
@@ -1953,8 +1995,10 @@ function updatePlayer() {
   let moving = false;
   if (!(sprinting)) {
     if (!playerLaunched) {
-      if (isBindingDown("moveRight")) { playerX += 5; moving = true; facingLeft = false; }
-      if (isBindingDown("moveLeft"))  { playerX -= 5; moving = true; facingLeft = true;  }
+      if (!isFocusing) {
+        if (isBindingDown("moveRight")) { playerX += 5; moving = true; facingLeft = false; isFocusing = false; chargingSound.stop() }
+        if (isBindingDown("moveLeft"))  { playerX -= 5; moving = true; facingLeft = true; isFocusing = false; chargingSound.stop() }
+      }
     } else {
       if (!(canSprint) && velY >= 0 && !(canFindTimer("sprintCool"))) {
         canSprint = true
@@ -1987,7 +2031,7 @@ function updatePlayer() {
   playerX = constrain(playerX, 0, worldWidth - drawSize);
 
   
-  if (!(sprinting)) {
+  if (!(sprinting) && (!isFocusing || selectedClass === "Melee")) {
     
     velY += gravity;
     playerY += velY;
@@ -2050,7 +2094,11 @@ function updatePlayer() {
       animTimer = 0;
     }
   } else {
-    playerX += sprintVel;
+    if (sprinting) {
+      playerX += sprintVel;
+    } else if (!onGround) {
+      playerY += sin(frameCount * 0.3)
+    }
   }
 
   // camera follows player, clamped to world
@@ -2087,11 +2135,28 @@ function updatePlayer() {
   if (!isCharging) {
     if (selectedClass === "Mage") {
       let prev = magic;
-      magic = min(maxMagic, magic + 0.1);
+      if (isFocusing) {
+        magic = min(maxMagic, magic + 0.4);
+        if (magic == maxMagic) {
+          isFocusing = false;
+          chargingSound.stop()
+        }
+      } else {
+        magic = min(maxMagic, magic + 0.05);
+      }
       if (prev < maxMagic && magic >= maxMagic && sfxBarFull) sfxBarFull.play();
     } else {
       let prev = stamina;
-      stamina = min(maxStamina, stamina + 0.06);
+      if (isFocusing) {
+        stamina = min(maxStamina, stamina + 0.4);
+        if (stamina == maxStamina) {
+          isFocusing = false;
+          chargingSound.stop()
+        }
+      } else {
+        stamina = min(maxStamina, stamina + 0.05);
+        
+      }
       if (prev < maxStamina && stamina >= maxStamina && sfxBarFull) sfxBarFull.play();
     }
   }
@@ -2122,6 +2187,7 @@ function drawPlayer() {
   //if (gameState === "townLevel") return;
 
   let screenX = playerX - cameraX;
+  //text("Charging: " + isCharging + " attack: " + attackType, screenX, playerY + 30)
   let sx = currentFrame * frameWidth;
 
   push();
@@ -2254,7 +2320,7 @@ function spawnHeavyMeleeAttack() {
   attackFrame = 0;
   attackTimer = 0;
   sfxHeavyMelee.play();
-  stamina = max(0, stamina - 45);
+  stamina = max(0, stamina - 25);
 }
 
 function updateMeleeAttacks() {
@@ -2760,10 +2826,12 @@ function getDefaultKeybinds() {
     jump:        { type: "key",   code: 87, label: "W" },
     moveLeft:    { type: "key",   code: 65, label: "A" },
     moveRight:   { type: "key",   code: 68, label: "D" },
-    heavyAttack: { type: "key",   code: 81, label: "Q" },
+    heavyAttack: { type: "key",   code: 75, label: "K" },
     //lightAttack: { type: "mouse", button: LEFT, label: "Left Click" },
     lightAttack: { type: "key", code: 74, label: "J" },
-    sprint:      { type: "key", code: 16, label: "Shift"}
+    sprint:      { type: "key", code: 16, label: "Shift"},
+    focus:       { type: "key", code: 76, label: "L"},
+    interact:    { type: "key", code: 83, label: "S"}
   };
 }
 
@@ -2857,7 +2925,7 @@ function tryJump() {
 }
 
 function triggerLightAttack() {
-  if (stamina <= 10 || magic <= 10) return;
+  if (stamina <= 5 || magic <= 5) return;
   if (isCharging) return;
   if (isDialogue) return;
   if (attackType !== "") return;
@@ -2865,7 +2933,7 @@ function triggerLightAttack() {
   if (selectedClass === "Mage") {
     spawnLightMageProjectile();
     sfxLightMage.play();
-    magic = max(0, magic - 10);
+    magic = max(0, magic - 5);
   } else {
     spawnLightMeleeAttack();
   }
@@ -2876,7 +2944,7 @@ function triggerHeavyAttack() {
   if (magic <= 15 || stamina <= 15) return;
 
   if (selectedClass === "Mage") {
-    magic = max(0, magic - 10)
+    magic = max(0, magic - 20)
     isCharging = true;
     chargeTime = 0;
   } else {
@@ -2910,8 +2978,8 @@ function getKeyMapRowRect(index) {
   let panelY = GAME_H * 0.04;
   let panelH = 470;
   let startY = panelY + panelH * 0.30;
-  let rowH = 42;
-  let rowGap = 8;
+  let rowH = 25;
+  let rowGap = 5;
   let rowW = panelW - 80;
   let rowX = panelX + 40;
   return { x: rowX, y: startY + index * (rowH + rowGap), w: rowW, h: rowH };
