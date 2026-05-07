@@ -4,6 +4,7 @@ let enemiesAlive = 0;
 let timers = [];
 let playerJustLanded = false;
 let waitingToLand = false;
+let diaCounter = 0
 
 
 function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
@@ -13,13 +14,19 @@ function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
 //Function for methods that change in discrete steps over time
 //Example: a fireball moving or chars for dialogue to be added to text
 function frameCalls() {
-
+    fill(255, 255, 255)
+    textSize(25)
+    //text(testText + " and COUNT: " + testCount, playerX - cameraX, playerY - 50 - drawSize)
+    diaCounter = 0
     for (i = 0; i < entityCount; i++) {
-        if (i < entities.length - 1 && entities[i].constructor === Dialogue && entities[i + 1].constructor !== Dialogue) {
+        if (entities[i].constructor === Dialogue) {
+            diaCounter++
+        }
+        /*if (i < entities.length - 1 && entities[i].constructor === Dialogue && entities[i + 1].constructor !== Dialogue) {
             let replacement = entities[i]
             entities[i] = entities[i + 1]
             entities[i + 1] = replacement
-        }
+        }*/
         if (entities[i].isAlive()) {
             if (!(isDialogue)) {
                 if (playerJustLanded && entities[i].constructor === Enemy && entities[i].isGrounded()) {
@@ -30,6 +37,8 @@ function frameCalls() {
                 entities[i].showSprite()
                 
             } else if (entities[i].constructor === Dialogue) {
+                entities[i].frameChange();
+            } else if (entities[i].constructor === Timer) {
                 entities[i].frameChange();
             }
         } else {
@@ -144,6 +153,8 @@ class Dialogue extends Entity {
 
     constructor(fullText, startText = "", lastLine = true) {
         super();
+        testText = "JUST MADE"
+        testCount++
         if (fullText.length <= 0) {
             throw new Error("Text is empty or invalid.")
         }
@@ -155,9 +166,19 @@ class Dialogue extends Entity {
         nextDialogueReady = false;
         this.letterIndex = 0;
         this.lastLine = lastLine;
+        this.endEarly = false;
+    }
+
+    endDialogueEarly() {
+        this.endEarly = true;
     }
 
     isAlive() {
+        //testText = frames
+        testText = "CHECKED ALIVE"
+        if (this.endEarly) {
+            return false;
+        }
         if (this.finished && entityWaitingForMouse == 1) {
             entityWaitingForMouse = -1;
             if (this.lastLine) {
@@ -172,14 +193,21 @@ class Dialogue extends Entity {
         return true;
     }
     frameChange() {
-
+        //if (this.endEarly) return;
+        //testText = this.finished
+        //testText = "NOT REPEATING"
+        //testText = "IS FINISHED: " + this.finished
         if (!(this.finished)) {
+            
             this.outText += this.fullText[this.letterIndex]
             this.letterIndex++;
         }
         if (this.outText.length == this.fullText.length + this.startLen) {
-            this.finished = true;
-            entityWaitingForMouse = 0;
+            if (!this.finished) {
+                this.finished = true;
+                entityWaitingForMouse = 0;
+                let textTimer = new Timer(15, "text")
+            }
         }
     }
     getText() {
@@ -202,7 +230,7 @@ class NPC extends Entity {
     }
 
     setSprite() {
-        this.image = loadImage("sprites/sprint2/npcs_320x320.png");
+        this.image = loadImage("sprites/sprint6/npcs_New.png");
     }
 
     isAlive() {
@@ -214,6 +242,7 @@ class NPC extends Entity {
     }
 
     frameChange() {
+        if (havingNightmare) return
         if (gameState === this.currGameState) {
             image(
                             this.image, //image
@@ -237,8 +266,18 @@ class NPC extends Entity {
                 text("S to speak", this.x - cameraX + (this.size / 2), groundY + drawSize - this.size)
                 if (isBindingDown("interact")) {
                     
-                    initDiaFile(this.name)
                     this.talkedTo = true;
+                    diaIndex = 0;
+                    nextDiaLine = 0;
+                    isDialogue = false;
+                    /*for (i = 0; i < entityCount; i++) {
+                        if (entities[i].constructor === Dialogue) {
+                            //entities[i].endDialogueEarly()
+                        }
+                    }*/
+                    sfxWalking.stop()
+                    initDiaFile(this.name)
+                    
 
                 }
             }
@@ -718,17 +757,19 @@ class Enemy extends Entity {
             if (this.timer <= 0) {
                 this.xVel = this.sprite_info["walk_speed"];
                 this.direction = "R";
-                let stopOrNot = floor(random(1000))
-                if (this.type === "lar") {
-                    stopOrNot = floor(random(3000))
-                }
-                if (stopOrNot < 2) {
-                    this.timer = floor(random(250) - random(100))
-                    this.case = "still"
-                } else if (stopOrNot < 10) {
-                    this.timer = floor(random(100) - random(50))
-                    this.case = "still"
-                }
+                if (enemiesAlive < 10) {
+                    let stopOrNot = floor(random(1000))
+                    if (this.type === "lar") {
+                        stopOrNot = floor(random(3000))
+                    }
+                    if (stopOrNot < 2) {
+                        this.timer = floor(random(250) - random(100))
+                        this.case = "still"
+                    } else if (stopOrNot < 10) {
+                        this.timer = floor(random(100) - random(50))
+                        this.case = "still"
+                    }
+                }  
             } else {
                 this.timer--;
             }
@@ -746,25 +787,18 @@ class Enemy extends Entity {
             if (this.timer <= 0) {
                 this.xVel = this.sprite_info["walk_speed"] * -1;
                 this.direction = "L";
-                let stopOrNot = floor(random(1000))
-                if (this.type === "lar") {
-                    stopOrNot = floor(random(3000))
-                }
-                if (stopOrNot < 2) {
+                if (enemiesAlive < 10) {
+                    let stopOrNot = floor(random(1000))
                     if (this.type === "lar") {
-                        this.timer = floor(random(500) - random(250))
-                    } else {
+                        stopOrNot = floor(random(3000))
+                    }
+                    if (stopOrNot < 2) {
                         this.timer = floor(random(250) - random(100))
-                    }
-                    this.case = "still"
-                } else if (stopOrNot < 10) {
-                    
-                    if (this.type === "lar") {
-                        this.timer = floor(random(200) - random(100))
-                    } else {
+                        this.case = "still"
+                    } else if (stopOrNot < 10) {
                         this.timer = floor(random(100) - random(50))
+                        this.case = "still"
                     }
-                    this.case = "still"
                 }
             } else {
                 this.timer--;

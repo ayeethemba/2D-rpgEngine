@@ -5,7 +5,9 @@ let diaIndex = 0;
 let nextDiaLine = 0;
 let currDiaFile;
 let leftRight;
+let leaderDia
 let helpDia = ["#???: HEEEEELLLLLLLPP!!!!", "~"]
+let havingNightmare = false;
 
 
 // indicates whether or not there should be a image loaded for speaker
@@ -13,11 +15,17 @@ let helpDia = ["#???: HEEEEELLLLLLLPP!!!!", "~"]
 let showDiaSprite = false;
 
 function initDiaFile(person) {
+    diaIndex = 0;
+    nextDiaLine = 0;
+    //isDialogue = false;
+    currDiaFile = ""
+    nextDialogueReady = false;
     if (person === "fairy") {
         isDialogue = true;
         currDiaFile = fairyDia;
         printDialogue(currDiaFile[0], 0);
     } else if (person === "trader") {
+        //testText = "WORKED TRADER"
         isDialogue = true;
         currDiaFile = traderDia;
         printDialogue(currDiaFile[0], 0);
@@ -25,6 +33,11 @@ function initDiaFile(person) {
         isDialogue = true;
         currDiaFile = helpDia;
         printDialogue(currDiaFile[0], 0);
+    } else if (person === "leader") {
+        //testText = "WORKED LEADER"
+        isDialogue = true;
+        currDiaFile = leaderDia
+        printDialogue(currDiaFile[0], 0)
     }
     
 }
@@ -38,14 +51,26 @@ function printDialogue(line, lineNumber) {
     if (marker === "#") {
 
         //splits the speaker name and the dialogue
-        splitLine = line.split(": ")
+        let splitLine = line.split(": ")
 
         // #N indicates that the narrator is talking
-        if (splitLine[0] === "#N") {
+        if (splitLine[0][0] === '#' && splitLine[0][1] == 'N') {
             showDiaSprite = true;
+            if (splitLine[0].length == 3) {
+                if (splitLine[0][2] === '0') {
+                    stopMusic()
+                    nightmareSong.loop()
+                    havingNightmare = true
+                } else if (splitLine[0][2] === '1') {
+                    stopMusic()
+                    musicTown.loop()
+                    havingNightmare = false
+                }
+                
+            }
             dialogue = new Dialogue(splitLine[1], "", false);
         } else {
-            personTalking = splitLine[0].substring(1);
+            let personTalking = splitLine[0].substring(1);
             if (personTalking === "Fairy") {
                 showDiaSprite = false;
                 dialogueSprite = fairySprite;
@@ -53,14 +78,21 @@ function printDialogue(line, lineNumber) {
                 showDiaSprite = false;
                 dialogueSprite = playerTalkSprite;
             } else if (personTalking === "Trader") {
+                //testText = "GOT TO TRADER"
                 showDiaSprite = false;
                 dialogueSprite = traderSprite;
+            } else if (personTalking === "Town Leader") {
+                //testText = "GOT TO LEADER"
+                showDiaSprite = false;
+                dialogueSprite = leaderSprite;
             } else {
                 showDiaSprite = true;
             }
             if (personTalking === "Player") {
                 dialogue = new Dialogue(splitLine[1], "", false);
             } else {
+                //testText = personTalking + ": " + splitLine[1]
+                //testText = entityWaitingForMouse + ": " + splitLine[1]
                 dialogue = personDialogue(personTalking + ": ", splitLine[1]);
             }
         }
@@ -102,6 +134,9 @@ function printDialogue(line, lineNumber) {
 
     // indicates that the dialogue file should stop being read
     if (marker === "~") {
+        if (currDiaFile[0].substring(1, 5) === "Town") {
+            enemyGameState = "raid"
+        }
         diaIndex = 0;
         nextDiaLine = 0;
         isDialogue = false;
@@ -112,5 +147,6 @@ function printDialogue(line, lineNumber) {
 }
 
 function personDialogue(name, dialogue) {
+
     return new Dialogue(dialogue, name, false)
 }

@@ -15,10 +15,13 @@ let hurtFrameCounter = 0;
 let playerCanBeHurt = true;
 let sprintVel;
 let testText = ""
+let testCount = 0
+let nightmareSong
 let canSprint = true;
 let sprintSound;
 let enemyWaves = 0;
 let isFocusing
+let enemyGameState = "none"
 
 let musicEnemies;
 let musicBoss
@@ -121,6 +124,7 @@ let playerTalkSprite;
 let dialogueSprite;
 let npcSprites;
 let traderSprite;
+let leaderSprite;
 let skipDialogueButton;
 let mageSprite;
 let meleeSprite;
@@ -310,6 +314,7 @@ function setup() {
 
   town4Sprite = town4Sprite.get(162, 0, 1118, 677)
   traderSprite = npcSprites.get(40, 0, 240, 240);
+  leaderSprite = npcSprites.get(1640, 0, 240, 240);
   mageSprite = mageSprite.get(40, 0, 240, 240);
   meleeSprite = meleeSprite.get(40, 0, 240, 240);
   forestSprite = forestSprite.get(10, 7, 2489, 570);
@@ -354,12 +359,20 @@ function setup() {
   musicButton.size(300 * scaleFactor, 100 * scaleFactor);
   musicButton.position(toScreenX(GAME_W / 2) - 150 * scaleFactor, toScreenY(GAME_H / 2) - 50 * scaleFactor);
   skipDialogueButton = createMusicButton("Skip Dialogue", 0, 0, function() {
-    diaIndex = 0;
-    nextDiaLine = 0;
-    isDialogue = false;
-    sfxTextLoop.stop();
-    skipDialogueButton.hide();
-    updateUI();
+    if (!canFindTimer("text")) {
+      diaIndex = 0;
+      nextDiaLine = 0;
+      isDialogue = false;
+      nextDialogueReady = false
+      for (i = 0; i < entityCount; i++) {
+        if (entities[i].constructor === Dialogue) {
+          //entities[i].endDialogueEarly()
+        }
+      }
+      sfxTextLoop.stop();
+      skipDialogueButton.hide();
+      updateUI();
+    }
   })
   skipDialogueButton.hide();
   skipDialogueButton.size(200 * scaleFactor, 80 * scaleFactor);
@@ -473,6 +486,7 @@ pauseMenuButton.style("font-size", "22px");
 pauseMenuButton.mousePressed(function() {
   if (gameState === "introLevel" || gameState === "introForest" || gameState === "townLevel" || gameState === "bossLevel") {
     isPaused = true;
+    resetAttackStuff()
     pauseSubScreen = "main";
     mouseReleased = false;
     updateUI();
@@ -607,7 +621,8 @@ function preload() {
   poemLines = loadStrings("./libraries/data/intro_poem.txt");
   fairyDia = loadStrings("./libraries/data/dialogue/fairy.txt");
   traderDia = loadStrings("./libraries/data/dialogue/trader.txt");
-  npcSprites = loadImage("sprites/sprint2/npcs_320x320.png");
+  leaderDia = loadStrings("./libraries/data/dialogue/leader.txt");
+  npcSprites = loadImage("sprites/sprint6/npcs_New.png");
   mageSprite = loadImage("sprites/sprint2/mage_class_320x320.png");
   meleeSprite = loadImage("sprites/sprint2/melee_class_320x320.png");
   forestSprite = loadImage("sprites/sprint5/forest.png")
@@ -629,18 +644,20 @@ function preload() {
   musicBoss = loadSound("sounds/music/BossSong.wav");
   musicTown = loadSound("sounds/music/townSong.wav");
   musicEnemies = loadSound("sounds/music/fightingEnemies.mp3");
+  nightmareSong = loadSound("sounds/music/nightmare.wav");
 
   sprintSound = loadSound("sounds/sprintSound.wav");
   sfxWalking  = loadSound("sounds/walking hard_surface2.mp3");
   sfxBarFull  = loadSound("sounds/bar full.mp3");
   sfxTextLoop = loadSound("sounds/text loop.mp3");
-  
+
   musicTrack = [
   { sound: musicIntro, base: 0.4 },
   { sound: musicDream, base: 0.4 },
   { sound: musicEnemies, base: 1.5 },
   { sound: musicBoss,  base: 0.4},
-  { sound: musicTown,  base: 0.7}
+  { sound: musicTown,  base: 0.7},
+  { sound: nightmareSong, base: 1.0}
 ];
 
 sfxTrack = [
@@ -715,6 +732,7 @@ function draw() {
       //spawnEnemy("lar", "right")
       //spawnEnemy("med", "right")
       enemyWaves++;
+      //initBossLevel()
       //initTownLevel()
     }
     if (playerX > worldWidth - (worldWidth / 16)) {
@@ -777,6 +795,35 @@ function draw() {
   } else if (gameState === "townLevel") {
 
     drawTownLevel();
+    if (enemyGameState === "raid") {
+      enemyWaves = 1
+      spawnWave("sml", 10)
+      enemyGameState = "duringRaid"
+    } else if (enemiesAlive <= 0 && enemyWaves == 1) {
+      spawnWave("sml", 7)
+      spawnWave("med", 4)
+      enemyWaves++
+    } else if (enemiesAlive <= 3 && enemyWaves == 2) {
+      spawnWave("sml", 10)
+      spawnWave("med", 5)
+      spawnWave("lar", 2)
+      enemyWaves++
+    } else if (enemiesAlive <= 3 && enemyWaves == 3) {
+      spawnWave("sml", 10)
+      spawnWave("med", 7)
+      spawnWave("lar", 3)
+      enemyWaves++
+    } else if (enemiesAlive <= 3 && enemyWaves == 4) {
+      spawnWave("sml", 5)
+      spawnWave("med", 8)
+      spawnWave("lar", 2)
+      enemyWaves++
+    } else if (enemiesAlive <= 3 && enemyWaves == 5) {
+      spawnWave("sml", 10)
+      enemyWaves++
+    } else if (enemiesAlive <= 0 && enemyWaves == 6) {
+      enemyGameState = "postRaid"
+    }
     /*if (mouseIsPressed && frameWait <= 0) {
       frameWait = 10;
       let picture1;
@@ -784,7 +831,7 @@ function draw() {
       picture1.save("screenshot" + playerX + ".png");
       playerX += width;
     }*/
-   if (playerX > 4400 - (width / 6)) {
+   if (enemyGameState === "postRaid" && playerX > 4400 - (width / 6) && enemiesAlive <= 0) {
       initBossLevel();
    }
 
@@ -808,7 +855,7 @@ function draw() {
   } else if (gameState === "deathScreen") {
     drawRetryScreen();
   }
-  if (entityWaitingForMouse == 0 && mouseIsPressed) {
+  if (entityWaitingForMouse == 0 && mouseIsPressed && !canFindTimer("text")) {
     if (isDialogue) {
       if (gameMY() > (GAME_H * 3) / 4) {
         entityWaitingForMouse = 1;
@@ -860,7 +907,27 @@ function draw() {
   
 }
 
+function spawnWave(type, amount) {
+
+  for (i = 0; i < amount; i++) {
+    let side = floor(random(6))
+    if (side == 0) {
+      spawnEnemy(type, "right")
+    } else if (side == 1) {
+      spawnEnemy(type, "right-ish")
+    } else if (side == 2) {
+      spawnEnemy(type, "left")
+    } else if (side == 3) {
+      spawnEnemy(type, "middle")
+    } else if (side == 0) {
+      spawnEnemy(type, "left-ish")
+    }
+  }
+
+}
+
 function initTownLevel() {
+  enemyWaves = 0
   worldWidth = 4400
   playerX = 10
   cameraX = 0;
@@ -869,6 +936,7 @@ function initTownLevel() {
   musicTown.loop()
   gameState = "townLevel"
   let traderNPC = new NPC(0, "trader", 300, drawSize / 320, gameState)
+  let villageLeaderNPC = new NPC(5, "leader", 1000, drawSize / 320, gameState)
   updateUI();
 }
 
@@ -950,7 +1018,7 @@ function keyPressed() {
 
   // gameplay-only past this point
   if (gameState !== "introLevel" && gameState !== "introForest" && gameState !== "townLevel" && gameState !== "bossLevel") return;
-  testText = keyCode + "";
+  //testText = keyCode + "";
   if (keyCode === ESCAPE) {
     if (!isPaused) {
       isPaused = true;
@@ -968,6 +1036,21 @@ function keyPressed() {
   }
 
   if (isPaused) return;
+  if (keyPressMatches("lightAttack", keyCode)) {
+    if (selectedClass === "Mage") {
+      if (!canFindTimer("lightAtk")) {
+        let lightTimer = new Timer(6, "lightAtk")
+        triggerLightAttack();
+      }
+    } else {
+      triggerLightAttack();
+    }
+    return;
+  } /*else if ((key === 'j' || key === 'J') && selectedClass === "Mage" && magic > 10) {
+    spawnLightMageProjectile();
+    sfxLightMage.play();
+    magic = max(0, magic - 10);
+  }*/
   if (keyPressMatches("focus", keyCode)) {
     if (isCharging) {
       fireHeavyMageProjectile();
@@ -995,18 +1078,18 @@ function keyPressed() {
   }
 
   if (keyPressMatches("heavyAttack", keyCode) && attackType === "" && !isCharging) {
-    triggerHeavyAttack();
+    if (selectedClass === "Mage") {
+      if (!canFindTimer("heavyAtk")) {
+        let heavyTimer = new Timer(25, "heavyAtk")
+        triggerHeavyAttack();
+      }
+    } else {
+      triggerHeavyAttack();
+    }
     return;
   }
 
-  if (keyPressMatches("lightAttack", keyCode)) {
-    triggerLightAttack();
-    return;
-  } /*else if ((key === 'j' || key === 'J') && selectedClass === "Mage" && magic > 10) {
-    spawnLightMageProjectile();
-    sfxLightMage.play();
-    magic = max(0, magic - 10);
-  }*/
+  
 
   if (keyPressMatches("sprint", keyCode) && canSprint) {
     let energyMeasure
@@ -1142,6 +1225,17 @@ function initIntroLevel(skipDialogue = false) {
   if (sfxTextLoop && sfxTextLoop.isPlaying()) sfxTextLoop.stop();
 
   
+}
+
+function resetAttackStuff() {
+  attackType = "";
+  attackFrame = 0;
+  attackTimer = 0;
+
+  isCharging = false;
+  chargeTime = 0;
+  mageProjectiles = [];
+  meleeAttacks = [];
 }
 
 function decrementHealth() {
@@ -1985,6 +2079,10 @@ function drawTownLevel() {
   drawMageProjectiles();
   drawIntroTopUI();
   drawHUD();
+  if (havingNightmare) {
+    fill(0, 0, 0)
+    rect(0, 0, GAME_W, GAME_H)
+  }
   if (isDialogue) drawIntroDialogueBox();
   frameCalls();
 
@@ -2189,13 +2287,15 @@ function getAtkInfo(type) {
 }
 
 function drawPlayer() {
+  
   if (!spriteSheet) return;
   //if (gameState === "townLevel") return;
-
   let screenX = playerX - cameraX;
   //text("Charging: " + isCharging + " attack: " + attackType, screenX, playerY + 30)
   let sx = currentFrame * frameWidth;
-
+  fill(255, 255, 255)
+  textSize(30)
+  //text(entities.length, playerX - cameraX, playerY - 50 - drawSize)
   push();
   if (!(playerCanBeHurt) && hurtFrameCounter < 10) {
     tint(255, 100, 100)
@@ -2252,7 +2352,7 @@ function spawnLightMageProjectile() {
     y: playerY + drawSize / 2,
     velX: dir * 9,
     type: "light",
-    damage: 30,
+    damage: 15,
     drawW: 80,
     drawH: 80,
     maxDist: 340,
@@ -2349,6 +2449,7 @@ function updateMageProjectiles() {
     p.animTimer++;
     if (p.animTimer % 5 === 0) p.frame++;
 
+    if (p.type === "heavy" && p.hitEnemies.length > 5) mageProjectiles.splice(i, 1)
     // when enemies are added: light stops on first hit (hit=true; break),
     // heavy pierces all — do NOT break, let it continue through every enemy
 
