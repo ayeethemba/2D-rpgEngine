@@ -1007,11 +1007,13 @@ class Enemy extends Entity {
             this.enemy_frame += 0.13;
         }
 
-        if ((gameState === "introLevel" || gameState === "introForest" || gameState === "townLevel" || gameState === "bossLevel") && this.spawnedIn) {
+        if ((gameState === "introLevel" || gameState === "introForest" || gameState === "townLevel" || gameState === "bossLevel" || gameState === "dungeonLevel") && this.spawnedIn) {
             if (this.health > 0) {
                 this.load_enemies();
-                this.moveAndJumpAndGravity();
-                this.intelligence();
+                if (typeof isTimeStop === 'undefined' || !isTimeStop) {
+                    this.moveAndJumpAndGravity();
+                    this.intelligence();
+                }
                 this.processHealth();
             } else {
                 tint(255, map(this.deathJump, -5, 3, 255, 0, true));
@@ -1452,6 +1454,8 @@ class Enemy extends Entity {
             if (rectsOverlap(ex, ey, ew, ew, a.x, a.y, a.hitW, a.hitH)) {
                 this.health -= a.damage;
                 a.hitEnemies.push(this);
+                if (typeof specialBar !== 'undefined' && mushroomReceived) specialBar = min(maxSpecialBar, specialBar + a.damage * 0.5);
+                if (typeof isTimeStop !== 'undefined' && isTimeStop) HP = min(maxHP, HP + a.damage * 0.2);
             }
         }
 
@@ -1467,6 +1471,8 @@ class Enemy extends Entity {
             if (rectsOverlap(ex, ey, ew, ew, px, py, pSize, pSize)) {
                 this.health -= p.damage;
                 p.hitEnemies.push(this);
+                if (typeof specialBar !== 'undefined' && mushroomReceived) specialBar = min(maxSpecialBar, specialBar + p.damage * 0.5);
+                if (typeof isTimeStop !== 'undefined' && isTimeStop) HP = min(maxHP, HP + p.damage * 0.2);
                 if (p.type === "light") mageProjectiles.splice(i, 1);
             }
         }
