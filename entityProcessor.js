@@ -755,10 +755,7 @@ class Boss extends Entity {
                     //enemyHitboxer(thisEnemyX - ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), this.y - this.sprite_info["atk_pos_delta"], this.bossDrawSize, "boss", this.enemy_frame, -1)            
                 }
                 if (!this.madeCross && floor(this.enemy_frame) == 5) {
-                    let newCross = new CrossAtk(this.x + (this.bossDrawSize/ 2), this.y - ((this.bossDrawSize * 3) / 4), 1);
                     if (boss_spawn_sfx) boss_spawn_sfx.play();
-                    let newCross1 = new CrossAtk(this.x + (this.bossDrawSize/ 3), this.y - ((this.bossDrawSize * 3) / 4), 0);
-                    let newCross2 = new CrossAtk(this.x + ((this.bossDrawSize * 2) / 3), this.y - ((this.bossDrawSize * 3) / 4), 2);
                     let newCross = new CrossAtk(this.x + (this.bossDrawSize/ 2), this.y - ((this.bossDrawSize * 3) / 4), 1)
                     let newCross1 = new CrossAtk(this.x + (this.bossDrawSize/ 3), this.y - ((this.bossDrawSize * 3) / 4), 0)
                     let newCross2 = new CrossAtk(this.x + ((this.bossDrawSize * 2) / 3), this.y - ((this.bossDrawSize * 3) / 4), 2)

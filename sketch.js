@@ -3043,6 +3043,8 @@ function drawPlayer() {
   push();
   if (!(playerCanBeHurt) && hurtFrameCounter < 10) {
     tint(255, 100, 100)
+    currentFrame = 1;
+    sx = currentFrame * frameWidth;
   }
   if (facingLeft) {
     translate(screenX + drawSize, playerY);
