@@ -11,6 +11,7 @@ let town3Sprite;
 let town4Sprite;
 
 let sprinting = false;
+let brickImg
 let hurtFrameCounter = 0;
 let playerCanBeHurt = true;
 let sprintVel;
@@ -645,6 +646,8 @@ function preload() {
   traderDia = loadStrings("./libraries/data/dialogue/trader.txt");
   leaderDia = loadStrings("./libraries/data/dialogue/leader.txt");
   npcSprites = loadImage("sprites/sprint6/npcs_New.png");
+  brickImg = loadImage("sprites/sprint6/backgroundBrick.png")
+
   mageSprite = loadImage("sprites/sprint2/mage_class_320x320.png");
   meleeSprite = loadImage("sprites/sprint2/melee_class_320x320.png");
   forestSprite = loadImage("sprites/sprint5/forest.png")
@@ -854,16 +857,17 @@ function draw() {
 
     if (enemyGameState === "none") {
       introObjective = "Speak to the trader";
-    } else if (enemyGameState === "duringRaid" || enemyGameState === "raid") {
+    } /*else if (enemyGameState === "duringRaid" || enemyGameState === "raid") {
       introObjective = enemiesAlive > 0 ? "Defend the town! (" + enemiesAlive + " remaining)" : "Hold the line...";
     } else if (enemyGameState === "postRaid") {
       introObjective = "The town is safe. Find the tavern.";
-    }
+    }*/
     drawTownLevel();
     if (enemyGameState === "raid") {
       enemyWaves = 1
       spawnWave("sml", 10)
       enemyGameState = "duringRaid"
+      introObjective = enemiesAlive > 0 ? "Defend the town! (" + enemiesAlive + " remaining)" : "Hold the line...";
     } else if (enemiesAlive <= 0 && enemyWaves == 1) {
       cleanEntities()
       spawnWave("sml", 7)
@@ -901,6 +905,7 @@ function draw() {
       enemyWaves++
     } else if (enemiesAlive <= 0 && enemyWaves == 6) {
       cleanEntities()
+      introObjective = "The town is safe. Find the tavern.";
       enemyGameState = "postRaid"
     }
     /*if (mouseIsPressed && frameWait <= 0) {
@@ -916,7 +921,21 @@ function draw() {
 
   } else if (gameState === "bossLevel") {
 
-    drawBossLevel();
+    /*clear()
+    //drawBossLevel();
+    //drawBrickRows(0, 0, worldWidth, groundY - 80);
+    //drawUpperButtresses();
+    drawLevelUpdates()
+    drawDungeonPillars();
+    //drawMidgroundDetails();
+    if (mouseIsPressed && frameWait <= 0) {
+      frameWait = 10;
+      let picture1;
+      picture1 = get(0, 0, width, (height * 1) / 1);
+      picture1.save("screenshot" + playerX + ".png");
+      playerX += GAME_W;
+    }*/
+   drawBossLevel()
     if (enemyWaves == 0 && playerX > (GAME_W / 6)) {
       //spawnEnemy("boss", "right");
       //spawnEnemy("lar", "right");
@@ -2883,36 +2902,36 @@ function updatePlayer() {
     if (selectedClass === "Mage") {
       let prev = magic;
       if (isFocusing) {
-        magic = min(maxMagic, magic + 0.4);
+        magic = min(maxMagic, magic + 1.2);
         if (gameState === "bossLevel") {
-          magic = min(maxMagic, magic + 0.5);
+          magic = min(maxMagic, magic + 1.2);
         }
         if (magic == maxMagic) {
           isFocusing = false;
           if (chargingSound) chargingSound.stop()
         }
       } else {
-        magic = min(maxMagic, magic + 0.05);
+        magic = min(maxMagic, magic + 0.15);
         if (gameState === "bossLevel") {
-          magic = min(maxMagic, magic + 0.05);
+          magic = min(maxMagic, magic + 0.15);
         }
       }
       if (prev < maxMagic && magic >= maxMagic && sfxBarFull) sfxBarFull.play();
     } else {
       let prev = stamina;
       if (isFocusing) {
-        stamina = min(maxStamina, stamina + 0.4);
+        stamina = min(maxStamina, stamina + 1.2);
         if (gameState === "bossLevel") {
-          stamina = min(maxStamina, stamina + 0.5);
+          stamina = min(maxStamina, stamina + 1.2);
         }
         if (stamina == maxStamina) {
           isFocusing = false;
           if (chargingSound) chargingSound.stop()
         }
       } else {
-        stamina = min(maxStamina, stamina + 0.05);
+        stamina = min(maxStamina, stamina + 0.15);
         if (gameState === "bossLevel") {
-          stamina = min(maxStamina, stamina + 0.05);
+          stamina = min(maxStamina, stamina + 0.15);
         }
         
       }
@@ -3031,7 +3050,7 @@ function fireHeavyMageProjectile() {
   let ratio = chargeTime / maxChargeTime;
   let damage = lerp(30, 150, ratio);
   if (ratio >= 1.0) {
-    damage = 200;
+    damage = 9999999;
   }
   let radius = lerp(18, 55, ratio);
   let dir = facingLeft ? -1 : 1;
@@ -3503,20 +3522,20 @@ function drawIntroTopUI() {
   let y = 25;
 
   fill(10, 12, 18, 190);
-  //rect(x, y, panelW, panelH, 12);
+  rect(x, y, panelW, panelH, 12);
 
   fill(255, 255, 255, 10);
-  //rect(x + 4, y + 4, panelW - 8, panelH - 8, 10);
+  rect(x + 4, y + 4, panelW - 8, panelH - 8, 10);
 
   fill(240, 240, 246);
   textAlign(LEFT, TOP);
   textFont("Georgia");
   textSize(16);
-  //text("Objective", x + 16, y + 12);
+  text("Objective", x + 16, y + 12);
 
   fill(214, 214, 226);
   textSize(14);
-  //text(introObjective, x + 16, y + 36);
+  text(introObjective, x + 16, y + 36);
 }
 
 function drawIntroDialogueBox() {
@@ -3753,7 +3772,7 @@ function triggerSpecialAbility() {
   }
   if (selectedClass === "Mage") {
     isTimeStop = true;
-    timeStopTimer = 420;
+    timeStopTimer = 200;
     if (sfxZaWarudo) { sfxZaWarudo.stop(); sfxZaWarudo.play(); }
   } else {
     isRageMode = true;

@@ -157,7 +157,7 @@ function printDialogue(line, lineNumber) {
 
     // indicates that the dialogue file should stop being read
     if (marker === "~") {
-        if (currDiaFile === traderDia) {
+        if (currDiaFile === leaderDia) {
             enemyGameState = "raid"
         }
         if (typeof bartenderDia !== 'undefined' && currDiaFile === bartenderDia) {

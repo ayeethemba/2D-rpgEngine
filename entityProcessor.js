@@ -445,7 +445,7 @@ class Boss extends Entity {
         super();
         this.timer = 0
         enemiesAlive++;
-        this.health = 2500;
+        this.health = 1500;
         this.setSprites();
         this.x = 1000
         this.direction = "L"
@@ -498,8 +498,8 @@ class Boss extends Entity {
             "atkSizeDiff": 0
         }
         this.bossDrawSize = this.sprite_info["sprite_size"][1] * this.sprite_info["scale"]
-        this.health = 2500;
-        this.maxHealth = 2500;
+        this.health = 1500;
+        this.maxHealth = 1500;
         this.ableToJump = false;
         this.attackSpeed = 0.01
         this.img0 = loadImage(this.sprite_info["sheet"]);
@@ -823,7 +823,7 @@ class Boss extends Entity {
         fill(50, 50, 50)
         rect(GAME_W/8, GAME_H/16, (GAME_W * 3) / 4, GAME_H / 16)
         fill(255, 0, 0)
-        rect(GAME_W/8, GAME_H/16, ((GAME_W * 3) / 4) * (this.health / 2500), GAME_H / 16)
+        rect(GAME_W/8, GAME_H/16, ((GAME_W * 3) / 4) * (this.health / 1500), GAME_H / 16)
     }
 
     intelligence() {

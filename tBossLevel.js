@@ -366,7 +366,18 @@ function drawDungeonBackground() {
   rect(0, 0, worldWidth, height);
 
   drawFarBackdrop();
-  drawBrickRows(0, 0, worldWidth, groundY - 80);
+  //drawBrickRows(0, 0, worldWidth, groundY - 80);
+  //pop();
+  
+  image(brickImg, 0, 0, GAME_W * (10 / 9), GAME_H * (10 / 9), 200, 0, 1280, 677)
+  image(brickImg, GAME_W / 2, 0, GAME_W * (10 / 9), GAME_H * (10 / 9), 200, 0, 1280, 677)
+  image(brickImg, GAME_W, 0, GAME_W * (10 / 9), GAME_H * (10 / 9), 200, 0, 1280, 677)
+  image(brickImg, GAME_W * (3/2), 0, GAME_W * (10 / 9), GAME_H * (10 / 9), 200, 0, 1280, 677)
+  image(brickImg, GAME_W * 2, 0, GAME_W * (10 / 9), GAME_H * (10 / 9), 200, 0, 1280, 677)
+  image(brickImg, GAME_W * (5/2), 0, GAME_W * (10 / 9), GAME_H * (10 / 9), 200, 0, 1280, 677)
+  //push();
+  //translate(-cameraX, 0);
+  //noStroke();
   drawUpperButtresses();
   drawDungeonPillars();
   drawTorches();
