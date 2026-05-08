@@ -3847,7 +3847,7 @@ function updateRageProjectiles() {
 
     // hit detection against enemies
     for (let j = 0; j < entityCount; j++) {
-      if (entities[j].constructor !== Enemy) continue;
+      if (entities[j].constructor !== Enemy && entities[j] !== Boss) continue;
       let e = entities[j];
       if (p.hitEnemies.includes(e)) continue;
       let info = e.sprite_info;
