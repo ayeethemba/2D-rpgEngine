@@ -1,0 +1,55 @@
+#Town Leader: Young traveler, i'm afraid you've come to our town at quite the dire time.
+#Town Leader: Normally I would introduce you to all our wonderful residents and their crafts, but all of that is currently at stake.
+#Town Leader: We've recieved word from just outside the village that an army of goblins is on their way here.
+#Town Leader: I suggest you move on in your travels and find somewhere safer. I'm afraid we don't have the power to put up much of a fight.
+~
+=Player: [Well good luck with that...|I'll help you!]
+8
+32
+#Town Leader: Thank you. I hope you find a safer place to rest.
+#Town Leader: ........Wait!
+#Town Leader: I'm sorry, I didn't get a good look at you before.
+#Town Leader: You seem quite capable, i'm so sorry for asking you for this, but please help our village!
+=Player: [Why should I? | ...Fine, if you say so]
+15
+46
+#N0: As the words leave your mouth, a terrible, icy feeling crawls its way up from your numb feet to the pit in your heart.
+#N: Your heart starts to beat, fast, your vision blurs, you start to sweat, your nerves wired.
+#N: You pass out, or at least you think you do.
+#N: You feel the summation of a lifetime wasted all at once.
+#N: You see yourself slaving away for a hollow purpose others have convinced you to care about.
+#N: You hear spark for life crying out as you extinguish it under a shiny corperate shoe.
+#N: You watch from outside yourself as people in your life pretend that you are still yourself as they slowly drift away.
+#N: You see yourself as a perfect plastic sculpture, with shiny shoes and shiny clothes and shiny skin and a shiny soul.
+#N1: Suddenly, you feel hands on your shoulders keeping you up, and the image of the town leader's worried face in front of you.
+#Town Leader: Are you alright, young one? You look as if you had died!
+#Town Leader: I know you might not fully understand the gravity of the situation, but these people are more than just their lives.
+#Town Leader: The goblins have already spread far and wide, corrupting and conforming everything in their wake.
+#Town Leader: That we know of, this is the last bastion left.
+#Town Leader: To lose these people would be to lose our humanity itself, all hope of living free.
+#Town Leader: I would you ask you, one more time, if you would help us.
+#Town Leader: But it does not matter. They're already here.
+~
+#Town Leader: Thank you so much, hero!
+#Town Leader: These goblins are a terrible bunch, they've already killed and enslaved so many other towns.
+#Town Leader: They believe in nothing but spreading their reign, and have no agency outside of what their higher ups order them to do.
+=Player: [I'll make sure not a single one escapes|Where did they come from?]
+38
+48
+#Town Leader: That's likely for the best, however, theres something I think you should know.
+#Town Leader: Each one of them used to be human. They were found at points of desperation, then changed.
+#Town Leader: Offered food or water while near death, they had no choice but to accept.
+#Town Leader: After that, their minds themselves were morphed, and they lost everything that made them themselves, lost every individual want.
+#Town Leader: Now they want nothing but to follow orders, the idea of climbing the leadership ladder acting as their carrot on a stick.
+#Player: I'll make sure to put them out of their misery.
+#Town Leader: I wish you luck. It's all up to you. They approach.
+~
+#Town Leader: Well, not sure about your attitude, but still...
+%32
+#Town Leader: To be honest, we're not entirely sure.
+#Town Leader: The started appearing one day, slowly at first.
+#Town Leader: They appeared in larger cities, and have been spreading further and further since then.
+#Town Leader: They used to be people. There are whispers that someone, or something found them in times of desperation.
+#Town Leader: The tale goes that it offers food, water, or security, and tells people they need not worry for themselves anymore.
+#Town Leader: With little other choice, they take the offer, and lose their freedom. It takes over their minds, you see.
+%43
