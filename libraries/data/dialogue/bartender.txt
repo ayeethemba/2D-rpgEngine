@@ -1,0 +1,36 @@
+#Bartender: Well now. Look who just wandered in from the chaos.
+#Bartender: Name's Cael. I run the Weary Sword — only tavern in town still standing, and that's thanks to you.
+#N: Before you even sit down, he slides a mug of something dark and frothy across the bar.
+#Bartender: On the house. I don't take no for an answer.
+=Player: [How'd word spread so fast?|What's actually in this?]
+8
+14
+#Bartender: Small town. You sneeze on one end, they're gossiping on the other by midday.
+#Bartender: I watched from upstairs. Thought we were done when the first wave hit.
+#Bartender: Then you just kept going. I've seen plenty of fighters. Never seen anything like that.
+#Player: So... the drink?
+#N: He raises an eyebrow. Almost smiles.
+%16
+#Bartender: Sharp nose — most people don't catch that second layer.
+#Bartender: Dark malt, forest honey, and something I found growing near a shrine east of the river.
+#Player: Near a shrine?
+#N: He leans across the bar. His voice drops just below the music.
+#Bartender: I'm going to show you something. Stay calm.
+#N: He opens a narrow drawer beneath the counter. Sets something on the bar.
+#N: It's a mushroom. But no mushroom has any right to look like this. Its cap drifts through violet, deep gold, and a colour with no name.
+#Bartender: A traveller left it last month. Shrine keeper gave it to him in the old ruins. Said it would — and I quote — "awaken what sleeps in the blood."
+#Bartender: He walked out without it. I don't think that was an accident.
+=Player: [What does it do exactly?|...I'm listening.]
+26
+30
+#Bartender: Honestly? Not entirely sure.
+#Bartender: It amplifies what's already in you. A mage's power darkens. A warrior's will becomes absolute.
+#Bartender: Hits different when you're running on something older than training.
+%32
+#Bartender: Then I'll be direct.
+#Bartender: What's below this town isn't just goblins. Something older has been stirring in those ruins since before the raid.
+#N: He slides the mushroom across the bar with two fingers. Gently — like it might decide for itself whether you're worthy.
+#Bartender: Take it. When the moment comes, don't hesitate. Don't think. Just act.
+#N: You pick it up. The moment it leaves the bar, something shifts in your chest. Not warmth. Pressure. The kind that comes before lightning.
+#Bartender: Now go. And please — don't die in a way that reflects poorly on my establishment.
+~

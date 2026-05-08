@@ -17,7 +17,6 @@ let showDiaSprite = false;
 function initDiaFile(person) {
     diaIndex = 0;
     nextDiaLine = 0;
-    //isDialogue = false;
     currDiaFile = ""
     nextDialogueReady = false;
     if (person === "fairy") {
@@ -25,7 +24,6 @@ function initDiaFile(person) {
         currDiaFile = fairyDia;
         printDialogue(currDiaFile[0], 0);
     } else if (person === "trader") {
-        //testText = "WORKED TRADER"
         isDialogue = true;
         currDiaFile = traderDia;
         printDialogue(currDiaFile[0], 0);
@@ -34,24 +32,40 @@ function initDiaFile(person) {
         currDiaFile = helpDia;
         printDialogue(currDiaFile[0], 0);
     } else if (person === "leader") {
-        //testText = "WORKED LEADER"
         isDialogue = true;
         currDiaFile = leaderDia
         printDialogue(currDiaFile[0], 0)
+    } else if (person === "bartender") {
+        isDialogue = true;
+        currDiaFile = bartenderDia;
+        printDialogue(currDiaFile[0], 0);
     }
-    
 }
 
 function printDialogue(line, lineNumber) {
 
+    // Guard: undefined or empty line — end dialogue cleanly rather than crash
+    if (line === undefined || line === null || line.length === 0) {
+        isDialogue = false;
+        nextDiaLine = 0;
+        if (typeof skipDialogueButton !== 'undefined') skipDialogueButton.hide();
+        return;
+    }
+
     //reads the first char of the dialogue file line to see what the command is
     marker = line[0]
-    
+
     // # marks that someone is talking
     if (marker === "#") {
 
         //splits the speaker name and the dialogue
         let splitLine = line.split(": ")
+
+        // Guard: malformed line with no ": " separator — skip silently
+        if (splitLine.length < 2 || !splitLine[1]) {
+            nextDiaLine++;
+            return;
+        }
 
         // #N indicates that the narrator is talking
         if (splitLine[0][0] === '#' && splitLine[0][1] == 'N') {
@@ -66,7 +80,6 @@ function printDialogue(line, lineNumber) {
                     musicTown.loop()
                     havingNightmare = false
                 }
-                
             }
             dialogue = new Dialogue(splitLine[1], "", false);
         } else {
@@ -78,21 +91,20 @@ function printDialogue(line, lineNumber) {
                 showDiaSprite = false;
                 dialogueSprite = playerTalkSprite;
             } else if (personTalking === "Trader") {
-                //testText = "GOT TO TRADER"
                 showDiaSprite = false;
                 dialogueSprite = traderSprite;
             } else if (personTalking === "Town Leader") {
-                //testText = "GOT TO LEADER"
                 showDiaSprite = false;
                 dialogueSprite = leaderSprite;
+            } else if (personTalking === "Bartender") {
+                dialogueSprite = npc5Sprite || traderSprite;
+                showDiaSprite = false;
             } else {
                 showDiaSprite = true;
             }
             if (personTalking === "Player") {
                 dialogue = new Dialogue(splitLine[1], "", false);
             } else {
-                //testText = personTalking + ": " + splitLine[1]
-                //testText = entityWaitingForMouse + ": " + splitLine[1]
                 dialogue = personDialogue(personTalking + ": ", splitLine[1]);
             }
         }
@@ -106,7 +118,10 @@ function printDialogue(line, lineNumber) {
             leftRight = "left";
             mouseReleased = false;
             updateUI();
-            nextDiaLine = int(currDiaFile[lineNumber + 1]) - 1;
+            let targetLine = currDiaFile[lineNumber + 1];
+            if (targetLine === undefined) { leftOption.hide(); rightOption.hide(); return; }
+            nextDiaLine = int(targetLine) - 1;
+            if (nextDiaLine < 0 || nextDiaLine >= currDiaFile.length) { leftOption.hide(); rightOption.hide(); return; }
             printDialogue(currDiaFile[nextDiaLine], nextDiaLine)
             leftOption.hide();
             rightOption.hide();
@@ -116,7 +131,10 @@ function printDialogue(line, lineNumber) {
             leftRight = "right";
             mouseReleased = false;
             updateUI();
-            nextDiaLine = int(currDiaFile[lineNumber + 2]) - 1;
+            let targetLine = currDiaFile[lineNumber + 2];
+            if (targetLine === undefined) { leftOption.hide(); rightOption.hide(); return; }
+            nextDiaLine = int(targetLine) - 1;
+            if (nextDiaLine < 0 || nextDiaLine >= currDiaFile.length) { leftOption.hide(); rightOption.hide(); return; }
             printDialogue(currDiaFile[nextDiaLine], nextDiaLine);
             leftOption.hide();
             rightOption.hide();
@@ -127,26 +145,33 @@ function printDialogue(line, lineNumber) {
     // indicates that the dialogue should skip to a certain line
     if (marker === "%") {
         nextDiaLine = int(line.substring(1)) - 1;
-        printDialogue(currDiaFile[nextDiaLine], nextDiaLine);
+        if (nextDiaLine >= 0 && nextDiaLine < currDiaFile.length) {
+            printDialogue(currDiaFile[nextDiaLine], nextDiaLine);
+        } else {
+            isDialogue = false;
+            if (typeof skipDialogueButton !== 'undefined') skipDialogueButton.hide();
+        }
     } else if (marker !== "=" && marker !== "~") {
         nextDiaLine++;
     }
 
     // indicates that the dialogue file should stop being read
     if (marker === "~") {
-        if (currDiaFile[0].substring(1, 5) === "Town") {
+        if (currDiaFile === traderDia) {
             enemyGameState = "raid"
+        }
+        if (typeof bartenderDia !== 'undefined' && currDiaFile === bartenderDia) {
+            mushroomReceived = true;
+            showMushroomPopup = true;
+            specialBar = 0;
         }
         diaIndex = 0;
         nextDiaLine = 0;
         isDialogue = false;
-        skipDialogueButton.hide();
+        if (typeof skipDialogueButton !== 'undefined') skipDialogueButton.hide();
     }
-    
-
 }
 
 function personDialogue(name, dialogue) {
-
     return new Dialogue(dialogue, name, false)
 }

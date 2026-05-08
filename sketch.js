@@ -17,6 +17,17 @@ let sprintVel;
 let testText = ""
 let testCount = 0
 let nightmareSong
+let musicGirei;
+let musicCredits;
+let creditsPhase = 0;
+let creditsTimer = 0;
+let creditsScrollY = 0;
+let specialMusicRef = null;
+let barPlaylist = [];
+let barSongIndex = 0;
+let barMuted = false;
+let barNextButton;
+let barMuteButton;
 let canSprint = true;
 let sprintSound;
 let enemyWaves = 0;
@@ -50,10 +61,8 @@ let blackFadeCount = 500;
 let startButton;
 let settingsButton;
 let quitButton;
+let devSkipBarButton;
 let backButton;
-let level1DevButton;
-let testLevelButton;
-let bossLevelButton;
 
 let isPaused = false;
 let pauseSubScreen = "main"
@@ -92,8 +101,24 @@ const KEYMAP_ACTIONS = [
   { id: "lightAttack", label: "Light Attack" },
   { id: "sprint", label: "Sprint"},
   { id: "focus", label: "Focus"},
-  { id: "interact", label: "Interact"}
+  { id: "interact", label: "Interact"},
+  { id: "special",  label: "Special Ability"}
 ];
+
+let specialBar = 0;
+let maxSpecialBar = 100;
+let isTimeStop = false;
+let timeStopTimer = 0;
+let isRageMode = false;
+let rageModeTimer = 0;
+let mushroomReceived = false;
+let showMushroomPopup = false;
+let bartenderDia;
+let sfxZaWarudo;
+let sfxSaiyan;
+let npc2Sprite, npc3Sprite, npc4Sprite, npc5Sprite;
+let rageProjectiles = [];
+let bartenderTalkStarted = false;
 
 let isDialogue = false;
 
@@ -315,6 +340,10 @@ function setup() {
   town4Sprite = town4Sprite.get(162, 0, 1118, 677)
   traderSprite = npcSprites.get(40, 0, 240, 240);
   leaderSprite = npcSprites.get(1640, 0, 240, 240);
+  npc2Sprite   = npcSprites.get(360, 0, 240, 240);
+  npc3Sprite   = npcSprites.get(680, 0, 240, 240);
+  npc4Sprite   = npcSprites.get(1000, 0, 240, 240);
+  npc5Sprite   = npcSprites.get(1320, 0, 240, 240);
   mageSprite = mageSprite.get(40, 0, 240, 240);
   meleeSprite = meleeSprite.get(40, 0, 240, 240);
   forestSprite = forestSprite.get(10, 7, 2489, 570);
@@ -369,7 +398,7 @@ function setup() {
           //entities[i].endDialogueEarly()
         }
       }
-      sfxTextLoop.stop();
+      if (sfxTextLoop) sfxTextLoop.stop();
       skipDialogueButton.hide();
       updateUI();
     }
@@ -393,6 +422,12 @@ function setup() {
     updateUI();
   });
 
+  devSkipBarButton = createMainMenuButton("[DEV] Skip to Bar", 0, 0, function() {
+    devSkipToTavern();
+  });
+  devSkipBarButton.style('font-size', '12px');
+  devSkipBarButton.style('opacity', '0.7');
+
   retryButton = createRetryButton("Retry", toScreenX(GAME_W * 0.4), toScreenY(GAME_H * 0.66), function () {
     gameState = "menu";
     mouseReleased = false;
@@ -412,7 +447,7 @@ function setup() {
     stopMusic();
     //musicIntro.stop();
     //musicDream.stop();
-    musicDream.loop();
+    if (musicDream) musicDream.loop();
     mouseReleased = false;
     updateUI();
   });
@@ -426,7 +461,7 @@ function setup() {
     //musicIntro.stop();
     //musicDream.stop();
     stopMusic();
-    musicDream.loop();
+    if (musicDream) musicDream.loop();
     mouseReleased = false;
     updateUI();
   });
@@ -469,7 +504,7 @@ function setup() {
       gameState = "poem";
     } else if (gameState === "introLevel") {
       gameState = "classSelect";
-      sfxAmbience.stop();
+      if (sfxAmbience) sfxAmbience.stop();
       if (sfxWalking && sfxWalking.isPlaying()) sfxWalking.stop();
       if (sfxTextLoop && sfxTextLoop.isPlaying()) sfxTextLoop.stop();
     } else {
@@ -484,7 +519,7 @@ pauseMenuButton.position(toScreenX(26), toScreenY(22));
 styleSecondaryButton(pauseMenuButton);
 pauseMenuButton.style("font-size", "22px");
 pauseMenuButton.mousePressed(function() {
-  if (gameState === "introLevel" || gameState === "introForest" || gameState === "townLevel" || gameState === "bossLevel") {
+  if (gameState === "introLevel" || gameState === "introForest" || gameState === "townLevel" || gameState === "bossLevel" || gameState === "tavernLevel" || gameState === "dungeonLevel") {
     isPaused = true;
     resetAttackStuff()
     pauseSubScreen = "main";
@@ -513,7 +548,7 @@ pauseQuitButton = createMainMenuButton("Quit", 0, 0, function() {
   pauseSnapshot = null;
   pauseSubScreen = "main";
   gameState = "menu";
-  sfxAmbience.stop();
+  if (sfxAmbience) sfxAmbience.stop();
   if (sfxWalking && sfxWalking.isPlaying()) sfxWalking.stop();
   if (sfxTextLoop && sfxTextLoop.isPlaying()) sfxTextLoop.stop();
   //musicDream.stop();
@@ -526,45 +561,31 @@ pauseQuitButton = createMainMenuButton("Quit", 0, 0, function() {
 layoutPauseButtons();
 
 
-  // Open Level 1 in the same tab so gameplay stays in one site flow.
-  level1DevButton = createButton("Level 1 (dev)");
-  level1DevButton.size(168, 38);
-  level1DevButton.position(toScreenX(GAME_W - 184), toScreenY(98));
-  styleSecondaryButton(level1DevButton);
-  level1DevButton.mousePressed(function() {
-    let path = window.location.pathname.indexOf("index.html") >= 0
-      ? "levels/your_level.html"
-      : "levels/your_level.html";
-    let classParam = selectedClass === "Mage" ? "Mage" : "Melee";
-    window.location.href = path + "?class=" + encodeURIComponent(classParam);
+  barNextButton = createButton("Next Song ▶");
+  barNextButton.size(120, 36);
+  styleSecondaryButton(barNextButton);
+  barNextButton.mousePressed(function() {
+    if (barPlaylist.length === 0) return;
+    barPlaylist[barSongIndex].stop();
+    barSongIndex = (barSongIndex + 1) % barPlaylist.length;
+    if (!barMuted) barPlaylist[barSongIndex].loop();
   });
-  level1DevButton.hide();
+  barNextButton.hide();
 
-  testLevelButton = createButton("Test Level");
-  testLevelButton.size(168, 38);
-  testLevelButton.position(toScreenX(GAME_W - 184), toScreenY(144));
-  styleSecondaryButton(testLevelButton);
-  testLevelButton.mousePressed(function() {
-    let path = window.location.pathname.indexOf("index.html") >= 0
-      ? "levels/test_level.html"
-      : "dev/levels/test_level.html";
-    let classParam = selectedClass === "Mage" ? "Mage" : "Melee";
-    window.open(path + "?class=" + encodeURIComponent(classParam), "_blank", "noopener,noreferrer");
+  barMuteButton = createButton("Mute 🔇");
+  barMuteButton.size(90, 36);
+  styleSecondaryButton(barMuteButton);
+  barMuteButton.mousePressed(function() {
+    barMuted = !barMuted;
+    if (barMuted) {
+      barPlaylist[barSongIndex].stop();
+      barMuteButton.html("Unmute 🔊");
+    } else {
+      barPlaylist[barSongIndex].loop();
+      barMuteButton.html("Mute 🔇");
+    }
   });
-  testLevelButton.hide();
-
-  bossLevelButton = createButton("Boss Level");
-  bossLevelButton.size(168, 38);
-  bossLevelButton.position(toScreenX(GAME_W - 184), toScreenY(190));
-  styleSecondaryButton(bossLevelButton);
-  bossLevelButton.mousePressed(function() {
-    let path = window.location.pathname.indexOf("index.html") >= 0
-      ? "levels/boss_level.html"
-      : "dev/levels/boss_level.html";
-    let classParam = selectedClass === "Mage" ? "Mage" : "Melee";
-    window.location.href = path + "?class=" + encodeURIComponent(classParam);
-  });
-  bossLevelButton.hide();
+  barMuteButton.hide();
 
   masterVolumeSlider = createSlider(0, 100, 50);
   musicVolumeSlider  = createSlider(0, 100, 50);
@@ -602,13 +623,14 @@ layoutPauseButtons();
       //musicIntro.stop();
       //musicDream.stop();
       stopMusic();
-      musicDream.loop();
+      if (musicDream) musicDream.loop();
       mouseReleased = false;
       updateUI();
     }
   } catch (e) {
     // Ignore malformed URL params.
   }
+
 }
 
 function updateGameScale() {
@@ -645,6 +667,20 @@ function preload() {
   musicTown = loadSound("sounds/music/townSong.wav");
   musicEnemies = loadSound("sounds/music/fightingEnemies.mp3");
   nightmareSong = loadSound("sounds/music/nightmare.wav");
+  musicGirei   = loadSound("sounds/music/Girei.mp3");
+  musicCredits = loadSound("sounds/music/End Music/01. Elden Ring.mp3");
+  sfxZaWarudo = loadSound("sounds/special music/hd-stardust-crusaders-za-warudo_1.mp3");
+  sfxSaiyan   = loadSound("sounds/special music/saiyan.mp3");
+  bartenderDia = loadStrings("./libraries/data/dialogue/bartender.txt");
+  barPlaylist = [
+    loadSound("sounds/music/Bar Music/starter.mp3"),
+    loadSound("sounds/music/Bar Music/Travis Scott - SICKO MODE ft. Drake.mp3"),
+    loadSound("sounds/music/Bar Music/Alice in Chains - Man In the Box.mp3"),
+    loadSound("sounds/music/Bar Music/Disco Lines - No Broke Boys.mp3"),
+    loadSound("sounds/music/Bar Music/Mobb Deep - Shook Ones pt.ll.mp3"),
+    loadSound("sounds/music/Bar Music/Fortnite - Orange Justice - Emote Music Audio.mp3"),
+    loadSound("sounds/music/Bar Music/Terreria Jungle.mp3")
+  ];
 
   sprintSound = loadSound("sounds/sprintSound.wav");
   sfxWalking  = loadSound("sounds/walking hard_surface2.mp3");
@@ -657,7 +693,9 @@ function preload() {
   { sound: musicEnemies, base: 1.5 },
   { sound: musicBoss,  base: 0.4},
   { sound: musicTown,  base: 0.7},
-  { sound: nightmareSong, base: 1.0}
+  { sound: nightmareSong, base: 1.0},
+  { sound: musicGirei,   base: 0.6 },
+  { sound: musicCredits, base: 0.55 }
 ];
 
 sfxTrack = [
@@ -672,7 +710,9 @@ sfxTrack = [
   { sound : sprintSound,  base: 0.4},
   { sound : hurtSound, base: 0.2},
   { sound : hurtSound2, base: 2.0},
-  { sound : chargingSound, base: 0.5}
+  { sound : chargingSound, base: 0.5},
+  { sound: sfxZaWarudo, base: 0.7 },
+  { sound: sfxSaiyan,   base: 0.8 }
 ];
 }
 
@@ -701,7 +741,7 @@ function draw() {
   }
 
   
-  if (gameState !== "introLevel" && gameState !== "introForest" && gameState !== "townLevel" && gameState !== "bossLevel") drawFantasyBackground();
+  if (gameState !== "introLevel" && gameState !== "introForest" && gameState !== "townLevel" && gameState !== "bossLevel" && gameState !== "tavernLevel" && gameState !== "dungeonLevel" && gameState !== "creditsScreen") drawFantasyBackground();
 
   if (gameState === "menu") {
     drawMenuPanel();
@@ -712,6 +752,7 @@ function draw() {
     drawClassSelectScreen();
   } else if (gameState === "introLevel") {
     //drawIntroLevelScreen();
+    updateIntroLevel();
     drawIntroLevelScreen();
     if (fadingFromBlack) {
       fill(0, 0, 0, blackFadeCount)
@@ -720,9 +761,6 @@ function draw() {
       if (blackFadeCount <= 0) {
         fadingFromBlack = false;
         skipDialogueButton.show();
-        level1DevButton.show();
-        testLevelButton.show();
-        bossLevelButton.show();
         pauseMenuButton.show();
         blackFadeCount = 500;
         //enemyWaves = 0;
@@ -742,17 +780,27 @@ function draw() {
       gameState = "introForest"
       worldWidth = 4960
       forestEnemiesSpawned = false;
+      helped = false;
       updateUI();
       //initBossLevel();
     }
   } else if (gameState === "introForest") {
 
+    if (!helped) {
+      introObjective = "Venture deeper into the forest";
+    } else if (enemiesAlive > 0) {
+      introObjective = "Defeat all enemies (" + enemiesAlive + " remaining)";
+    } else if (enemyWaves >= 3) {
+      introObjective = "Go right to continue";
+    } else {
+      introObjective = "Survive the waves";
+    }
     drawIntroForestScreen();
-    if (!(helped) && playerX > (width / 6)) {
+    if (!(helped) && playerX > (GAME_W / 6)) {
       helped = true;
-      sfxWalking.stop()
+      if (sfxWalking) sfxWalking.stop()
       initDiaFile("help")
-      musicDream.stop()
+      if (musicDream) musicDream.stop()
       musicEnemies.loop()
       spawnEnemy("sml", "right-ish");
       spawnEnemy("sml", "right");
@@ -788,12 +836,19 @@ function draw() {
 
       enemyWaves++
     }
-    if (playerX > 4960 - (width / 6) && enemiesAlive <= 0) {
+    if (playerX > 4960 - (GAME_W / 6) && enemiesAlive <= 0) {
       initTownLevel();
     }
 
   } else if (gameState === "townLevel") {
 
+    if (enemyGameState === "none") {
+      introObjective = "Speak to the trader";
+    } else if (enemyGameState === "duringRaid" || enemyGameState === "raid") {
+      introObjective = enemiesAlive > 0 ? "Defend the town! (" + enemiesAlive + " remaining)" : "Hold the line...";
+    } else if (enemyGameState === "postRaid") {
+      introObjective = "The town is safe. Find the tavern.";
+    }
     drawTownLevel();
     if (enemyGameState === "raid") {
       enemyWaves = 1
@@ -831,19 +886,73 @@ function draw() {
       picture1.save("screenshot" + playerX + ".png");
       playerX += width;
     }*/
-   if (enemyGameState === "postRaid" && playerX > 4400 - (width / 6) && enemiesAlive <= 0) {
-      initBossLevel();
+   if (enemyGameState === "postRaid" && playerX > 4400 - (GAME_W / 6) && enemiesAlive <= 0) {
+      initTavernLevel();
    }
 
   } else if (gameState === "bossLevel") {
 
     drawBossLevel();
-    if (enemyWaves == 0 && playerX > (width / 6)) {
-      //spawnEnemy("lar", "right");
-      //spawnEnemy("boss", "right");
+    if (enemyWaves == 0 && playerX > (GAME_W / 6)) {
       spawnEnemy("boss", "right");
-      //spawnEnemy("lar", "right");
       enemyWaves++;
+    }
+    if (enemyWaves >= 1 && enemiesAlive <= 0) {
+      initCreditsScreen();
+    }
+
+  } else if (gameState === "creditsScreen") {
+    drawCreditsScreen();
+
+  } else if (gameState === "tavernLevel") {
+    introObjective = mushroomReceived ? "Leave through the exit on the right" : "Speak to the bartender";
+    drawTavernLevel();
+    // Bartender interaction: player near bar and presses interact
+    if (!isDialogue && !mushroomReceived && playerX > worldWidth - 520 && keyIsDown(83)) {
+      if (!bartenderTalkStarted) {
+        bartenderTalkStarted = true;
+        initDiaFile("bartender");
+      }
+    } else if (!isDialogue && playerX < worldWidth - 520) {
+      bartenderTalkStarted = false;
+    }
+  } else if (gameState === "dungeonLevel") {
+
+    introObjective = enemiesAlive > 0 ? "Defeat enemies (" + enemiesAlive + " remaining)" : "Descend deeper...";
+    drawDungeonLevelScreen();
+    if (enemyWaves === 0 && playerX > GAME_W / 6) {
+      spawnEnemy("sml", "right-ish");
+      spawnEnemy("sml", "right");
+      spawnEnemy("sml", "left");
+      spawnEnemy("med", "middle");
+      spawnEnemy("sml", "right");
+      enemyWaves = 1;
+    }
+    if (enemyWaves === 1 && enemiesAlive <= 0) {
+      spawnEnemy("med", "right-ish");
+      spawnEnemy("med", "right");
+      spawnEnemy("sml", "left-ish");
+      spawnEnemy("sml", "left");
+      spawnEnemy("lar", "middle");
+      spawnEnemy("sml", "right");
+      spawnEnemy("med", "right-ish");
+      enemyWaves = 2;
+    }
+    if (enemyWaves === 2 && enemiesAlive <= 0) {
+      spawnEnemy("lar", "right-ish");
+      spawnEnemy("sml", "right");
+      spawnEnemy("med", "left-ish");
+      spawnEnemy("sml", "left");
+      spawnEnemy("lar", "middle");
+      spawnEnemy("med", "right");
+      spawnEnemy("sml", "left");
+      spawnEnemy("med", "right-ish");
+      spawnEnemy("sml", "right");
+      enemyWaves = 3;
+    }
+    if (enemyWaves === 3 && enemiesAlive <= 0 && playerX > 4800 - (GAME_W / 6)) {
+      introObjective = "Face the final guardian...";
+      initBossLevel();
     }
 
   } else if (gameState === "settings") {
@@ -864,6 +973,69 @@ function draw() {
       entityWaitingForMouse = 1;
     }
     
+  }
+
+  // Time stop overlay
+  if (isTimeStop && (gameState === "introLevel" || gameState === "introForest" || gameState === "townLevel" || gameState === "bossLevel" || gameState === "tavernLevel" || gameState === "dungeonLevel")) {
+    let progress = timeStopTimer / 420;
+    fill(20, 0, 60, map(progress, 1, 0.7, 0, 80, true));
+    noStroke();
+    rect(0, 0, GAME_W, GAME_H);
+    if (timeStopTimer > 360) {
+      fill(255, 240, 80, map(timeStopTimer, 420, 360, 0, 255));
+      textAlign(CENTER, CENTER);
+      textFont("Georgia");
+      textSize(48);
+      text("ZA WARUDO", GAME_W / 2, GAME_H / 3);
+      textSize(22);
+      fill(220, 200, 255, map(timeStopTimer, 420, 360, 0, 220));
+      text("Time has stopped.", GAME_W / 2, GAME_H / 3 + 58);
+    }
+    fill(220, 200, 255, 80);
+    textAlign(RIGHT, TOP);
+    textFont("Georgia");
+    textSize(13);
+    text("TIME STOP  " + ceil(timeStopTimer / 60) + "s", GAME_W - 24, 8);
+  }
+
+  // Rage mode overlay
+  if (isRageMode && (gameState === "introLevel" || gameState === "introForest" || gameState === "townLevel" || gameState === "bossLevel" || gameState === "tavernLevel" || gameState === "dungeonLevel")) {
+    if (rageModeTimer > 360) {
+      fill(200, 0, 0, map(rageModeTimer, 420, 360, 0, 120));
+      noStroke();
+      rect(0, 0, GAME_W, GAME_H);
+      fill(255, 60, 0, map(rageModeTimer, 420, 360, 0, 255));
+      textAlign(CENTER, CENTER);
+      textFont("Georgia");
+      textSize(48);
+      text("RAGE MODE", GAME_W / 2, GAME_H / 3);
+      textSize(20);
+      fill(255, 200, 100, map(rageModeTimer, 420, 360, 0, 200));
+      text("Fury unleashed.", GAME_W / 2, GAME_H / 3 + 56);
+    }
+    fill(255, 140, 60, 80);
+    textAlign(RIGHT, TOP);
+    textFont("Georgia");
+    textSize(13);
+    text("RAGE  " + ceil(rageModeTimer / 60) + "s", GAME_W - 24, 8);
+  }
+
+  // Mushroom popup
+  if (showMushroomPopup) {
+    fill(10, 8, 18, 200);
+    noStroke();
+    rect(GAME_W / 2 - 200, GAME_H / 2 - 50, 400, 110, 12);
+    fill(255, 240, 100);
+    textAlign(CENTER, CENTER);
+    textFont("Georgia");
+    textSize(16);
+    text("The mushroom's power awakens within you.", GAME_W / 2, GAME_H / 2 - 18);
+    textSize(14);
+    fill(220, 200, 255);
+    text("Press G to unleash fury in battle.", GAME_W / 2, GAME_H / 2 + 10);
+    textSize(11);
+    fill(160, 160, 180);
+    text("[ Click anywhere to continue ]", GAME_W / 2, GAME_H / 2 + 36);
   }
 
   outputVolume(masterVolumeSlider.value() / 100);
@@ -927,6 +1099,7 @@ function spawnWave(type, amount) {
 }
 
 function initTownLevel() {
+  enemyGameState = "none"
   enemyWaves = 0
   worldWidth = 4400
   playerX = 10
@@ -943,7 +1116,10 @@ function initTownLevel() {
 function stopMusic() {
 
   for (let m of musicTrack) {
-    m.sound.stop();
+    if (m.sound) m.sound.stop();
+  }
+  for (let s of barPlaylist) {
+    if (s && s.isPlaying()) s.stop();
   }
 
 }
@@ -953,25 +1129,235 @@ function initBossLevel() {
   worldWidth = 3200
   playerX = 10;
   cameraX = 0;
-  //drawSize = 80
   buildDungeonPlatforms();
   seedEmbers();
   groundY = (GAME_H * 13 / 16) - drawSize;
   stopMusic();
+  if (musicGirei && musicGirei.isPlaying()) musicGirei.stop();
+  specialMusicRef = null;
+  isTimeStop = false; timeStopTimer = 0;
+  isRageMode = false; rageModeTimer = 0;
   musicBoss.loop();
   gameState = "bossLevel";
   enemyWaves = 0;
+  rageProjectiles = [];
   updateUI();
-  
+
 }
+
+function devSkipToTavern() {
+  if (!selectedClass) selectedClass = "Melee";
+  let spritePath = selectedClass === "Mage"
+    ? "sprites/sprint2/mage_class_320x320.png"
+    : "sprites/sprint2/melee_class_320x320.png";
+  spriteSheet = loadImage(spritePath);
+  playerTalkSprite = selectedClass === "Mage" ? mageSprite : meleeSprite;
+  if (selectedClass === "Melee") {
+    atkLightSheet = loadImage("sprites/sprint2/melee_attack_320x160.png");
+    atkHeavySheet = loadImage("sprites/sprint2/heavy_melee_atk_320x320.png");
+  } else {
+    atkLightSheet = loadImage("sprites/sprint2/light_spell_atk_320x320.png");
+    atkHeavySheet = loadImage("sprites/sprint2/heavy_spell_atk_320x320.png");
+  }
+  currentFrame = 0; moveFrameIndex = 0; animTimer = 0;
+  attackType = ""; attackFrame = 0; attackTimer = 0;
+  isCharging = false; chargeTime = 0;
+  velX = 0; velY = 0;
+  facingLeft = false; sprinting = false; canSprint = true; sprintVel = 0;
+  HP = maxHP; magic = maxMagic; stamina = maxStamina;
+  initTavernLevel();
+}
+
+function initTavernLevel() {
+  stopMusic();
+  worldWidth = 1200;
+  playerX = 80;
+  cameraX = 0;
+  groundY = (GAME_H * 3 / 4) - drawSize;
+  HP = maxHP;
+  magic = maxMagic;
+  stamina = maxStamina;
+  enemyWaves = 0;
+  gameState = "tavernLevel";
+  barSongIndex = 0;
+  barMuted = false;
+  if (barMuteButton) barMuteButton.html("Mute 🔇");
+  if (barPlaylist.length > 0) barPlaylist[0].loop();
+  specialBar = 0;
+  isTimeStop = false;
+  timeStopTimer = 0;
+  isRageMode = false;
+  rageModeTimer = 0;
+  mushroomReceived = false;
+  showMushroomPopup = false;
+  rageProjectiles = [];
+  bartenderTalkStarted = false;
+  updateUI();
+}
+
+function initDungeonLevel() {
+  stopMusic();
+  worldWidth = 4800;
+  playerX = 10;
+  cameraX = 0;
+  buildDungeonPlatforms();
+  seedEmbers();
+  groundY = (GAME_H * 13 / 16) - drawSize;
+  enemyWaves = 0;
+  gameState = "dungeonLevel";
+  musicGirei.loop();
+  rageProjectiles = [];
+  updateUI();
+}
+
+function initCreditsScreen() {
+  stopMusic();
+  if (specialMusicRef) { specialMusicRef = null; }
+  isTimeStop = false; isRageMode = false;
+  creditsPhase = 0;
+  creditsTimer = 0;
+  creditsScrollY = GAME_H + 80;
+  gameState = "creditsScreen";
+  musicCredits.loop();
+  updateUI();
+}
+
+// ─── CREDITS DATA ────────────────────────────────────────────────────────────
+const CREDITS_POEM = [
+  { text: "THAT TIME I WAS AN OFFICE WORKER",  size: 28, style: 'bold',   col: [255, 230, 140], gap: 10 },
+  { text: "AND PUT IN A COMA BY A DEMON SLEEP GOD", size: 16, style: 'normal', col: [200, 185, 120], gap: 48 },
+  { text: "—  F I N  —",                        size: 22, style: 'bold',   col: [255, 200, 80],  gap: 52 },
+  { text: "The beast is slain.",                 size: 15, style: 'normal', col: [210, 200, 220], gap: 8  },
+  { text: "Its ancient dream shattered like glass across stone.",  size: 15, style: 'normal', col: [210, 200, 220], gap: 8  },
+  { text: "Silence — real silence — for the first time.",  size: 15, style: 'normal', col: [210, 200, 220], gap: 48 },
+  { text: "You woke up.",                        size: 20, style: 'bold',   col: [255, 255, 255], gap: 40 },
+  { text: "Not the same person who closed their eyes", size: 14, style: 'normal', col: [180, 175, 195], gap: 6  },
+  { text: "in that grey office chair,",          size: 14, style: 'normal', col: [180, 175, 195], gap: 6  },
+  { text: "under the hum of fluorescent lights", size: 14, style: 'normal', col: [180, 175, 195], gap: 6  },
+  { text: "and the weight of a life that had stopped surprising you.", size: 14, style: 'normal', col: [180, 175, 195], gap: 48 },
+  { text: "The mist, the forest, the burning town,", size: 14, style: 'normal', col: [180, 175, 195], gap: 6  },
+  { text: "the ruins older than any name —",     size: 14, style: 'normal', col: [180, 175, 195], gap: 6  },
+  { text: "they changed you.",                   size: 14, style: 'normal', col: [180, 175, 195], gap: 6  },
+  { text: "Every scar earned. Every step forward, chosen.", size: 14, style: 'normal', col: [180, 175, 195], gap: 48 },
+  { text: "The demon believed slumber",           size: 14, style: 'normal', col: [180, 175, 195], gap: 6  },
+  { text: "was the cruelest mercy.",              size: 14, style: 'normal', col: [180, 175, 195], gap: 6  },
+  { text: "You proved it wrong.",                 size: 16, style: 'bold',   col: [255, 220, 100], gap: 52 },
+  { text: "Rise.",                                size: 30, style: 'bold',   col: [255, 255, 255], gap: 0  },
+];
+
+const CREDITS_ROLL = [
+  { text: "────────────────────────────────", size: 12, col: [80, 75, 95],  gap: 44 },
+  { text: "CS345  —  Software Engineering",   size: 14, col: [180, 170, 200], gap: 6 },
+  { text: "Spring 2026  ·  Final Project",    size: 13, col: [150, 145, 170], gap: 44 },
+  { text: "Special Thanks",                   size: 16, style: 'bold', col: [255, 230, 140], gap: 12 },
+  { text: "Professor Chao  'Chaosillator'",  size: 13, col: [210, 200, 225], gap: 6  },
+  { text: "For the vision, the chaos, and the deadline extensions.", size: 12, col: [150, 145, 165], gap: 40 },
+  { text: "Everyone who played and suffered alongside us.", size: 12, col: [150, 145, 165], gap: 52 },
+  { text: "────────────────────────────────", size: 12, col: [80, 75, 95],  gap: 44 },
+  { text: "G A M E   C R E D I T S",         size: 18, style: 'bold', col: [255, 230, 140], gap: 48 },
+  { text: "Creative Director",                size: 12, col: [160, 155, 180], gap: 6  },
+  { text: "Nathan Dubuc",                    size: 17, style: 'bold', col: [230, 220, 255], gap: 6  },
+  { text: "Head Story & Mechanics Development", size: 12, col: [140, 135, 160], gap: 44 },
+  { text: "Combat Director",                  size: 12, col: [160, 155, 180], gap: 6  },
+  { text: "Themba Chika",                     size: 17, style: 'bold', col: [230, 220, 255], gap: 6  },
+  { text: "Head Combat & Systems Development", size: 12, col: [140, 135, 160], gap: 44 },
+  { text: "Art Director",                     size: 12, col: [160, 155, 180], gap: 6  },
+  { text: "Finn Bernuy",                      size: 17, style: 'bold', col: [230, 220, 255], gap: 6  },
+  { text: "Head Animator & Sprite Development", size: 12, col: [140, 135, 160], gap: 44 },
+  { text: "Interface Director",               size: 12, col: [160, 155, 180], gap: 6  },
+  { text: "Thomas Doby",                      size: 17, style: 'bold', col: [230, 220, 255], gap: 6  },
+  { text: "Head UI Mechanics & Systems Designer",     size: 12, col: [140, 135, 160], gap: 44 },
+  { text: "Environmental Director",           size: 12, col: [160, 155, 180], gap: 6  },
+  { text: "Kyla Carver",                      size: 17, style: 'bold', col: [230, 220, 255], gap: 6  },
+  { text: "Head Graphic Design & Level Design", size: 12, col: [140, 135, 160], gap: 60 },
+  { text: "────────────────────────────────", size: 12, col: [80, 75, 95],  gap: 52 },
+  { text: "Thank you for playing our game.",  size: 18, style: 'bold', col: [255, 255, 255], gap: 10 },
+  { text: "We hope it was worth waking up for.", size: 14, col: [200, 190, 220], gap: 80 },
+];
+
+function drawCreditsScreen() {
+  background(4, 3, 8);
+
+  if (creditsPhase === 0) {
+    // ── Ending poem — scrolls upward ──────────────────────────────────────
+    creditsScrollY -= 0.7;
+
+    for (let s of stars) {
+      fill(255, 255, 255, s.alpha * 0.4);
+      noStroke();
+      ellipse(s.x, s.y, s.size, s.size);
+    }
+
+    textAlign(CENTER, TOP);
+    textFont("Georgia");
+    noStroke();
+    let cy = creditsScrollY;
+    let totalH = 0;
+    for (let line of CREDITS_POEM) totalH += line.size * 1.4 + (line.gap || 0);
+
+    for (let line of CREDITS_POEM) {
+      textSize(line.size);
+      textStyle(line.style || 'normal');
+      let lineAlpha = 255;
+      if (cy < 60)          lineAlpha = map(cy, 0, 60, 0, 255, true);
+      if (cy > GAME_H - 30) lineAlpha = map(cy, GAME_H - 60, GAME_H, 255, 0, true);
+      fill(line.col[0], line.col[1], line.col[2], lineAlpha);
+      text(line.text, GAME_W / 2, cy);
+      cy += line.size * 1.4 + (line.gap || 0);
+    }
+    textStyle(NORMAL);
+
+    if (creditsScrollY + totalH < 20) {
+      creditsPhase = 1;
+      creditsScrollY = GAME_H + 80;
+    }
+
+  } else {
+    // ── Scrolling credits phase ────────────────────────────────────────────
+    creditsScrollY -= 0.9; // scroll speed
+
+    // starfield
+    for (let s of stars) {
+      fill(255, 255, 255, s.alpha * 0.4);
+      noStroke();
+      ellipse(s.x, s.y, s.size, s.size);
+    }
+
+    textAlign(CENTER, TOP);
+    textFont("Georgia");
+    let cy = creditsScrollY;
+    let totalH = 0;
+    for (let line of CREDITS_ROLL) {
+      totalH += (line.size || 14) * 1.4 + (line.gap || 10);
+    }
+
+    for (let line of CREDITS_ROLL) {
+      textSize(line.size || 14);
+      textStyle(line.style || 'normal');
+      let lineAlpha = 255;
+      // fade in at bottom, fade out at top
+      if (cy < 60) lineAlpha = map(cy, 0, 60, 0, 255, true);
+      if (cy > GAME_H - 30) lineAlpha = map(cy, GAME_H - 60, GAME_H, 255, 0, true);
+      fill(line.col[0], line.col[1], line.col[2], lineAlpha);
+      text(line.text, GAME_W / 2, cy);
+      cy += (line.size || 14) * 1.4 + (line.gap || 10);
+    }
+    textStyle(NORMAL);
+
+    // once last line scrolls off top, prompt return to menu
+    if (creditsScrollY + totalH < 20) {
+      fill(180, 170, 200, 160 + sin(frameCount * 0.05) * 60);
+      textSize(13);
+      textAlign(CENTER, CENTER);
+      text("[ Click anywhere to return to the main menu ]", GAME_W / 2, GAME_H - 28);
+    }
+  }
+}
+
 
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  
-  if (gameState === "bossLevel") {
-    buildDungeonPlatforms();
-  }
-  
+
   updateGameScale();
   buildMenuBgBuffer();
   buildIntroSkyBuffer();
@@ -979,6 +1365,10 @@ function windowResized() {
   groundY = (GAME_H * 3 / 4) - drawSize;
   if (gameState === "townLevel") {
     groundY = (GAME_H * 5 / 6) - drawSize;
+  }
+  if (gameState === "dungeonLevel" || gameState === "bossLevel") {
+    groundY = (GAME_H * 13 / 16) - drawSize;
+    buildDungeonPlatforms();
   }
   if (playerY > groundY) playerY = groundY;
   layoutMenuButtons();
@@ -989,11 +1379,10 @@ function windowResized() {
   musicButton.position(toScreenX(GAME_W / 2) - 150 * scaleFactor, toScreenY(GAME_H / 2) - 50 * scaleFactor);
   skipDialogueButton.size(200 * scaleFactor, 80 * scaleFactor);
   skipDialogueButton.position(toScreenX(GAME_W / 2) - 100 * scaleFactor, toScreenY(GAME_H / 2) - 40 * scaleFactor);
-  level1DevButton.position(toScreenX(GAME_W - 184), toScreenY(98));
-  testLevelButton.position(toScreenX(GAME_W - 184), toScreenY(144));
-  bossLevelButton.position(toScreenX(GAME_W - 184), toScreenY(190));
   backButton.position(toScreenX(26), toScreenY(22));
   pauseMenuButton.position(toScreenX(26), toScreenY(22));
+  if (barNextButton) barNextButton.position(toScreenX(GAME_W - 250), toScreenY(GAME_H - 60));
+  if (barMuteButton) barMuteButton.position(toScreenX(GAME_W - 120), toScreenY(GAME_H - 60));
 }
 
 function keyPressed() {
@@ -1017,7 +1406,7 @@ function keyPressed() {
   }
 
   // gameplay-only past this point
-  if (gameState !== "introLevel" && gameState !== "introForest" && gameState !== "townLevel" && gameState !== "bossLevel") return;
+  if (gameState !== "introLevel" && gameState !== "introForest" && gameState !== "townLevel" && gameState !== "bossLevel" && gameState !== "tavernLevel" && gameState !== "dungeonLevel") return;
   //testText = keyCode + "";
   if (keyCode === ESCAPE) {
     if (!isPaused) {
@@ -1057,20 +1446,19 @@ function keyPressed() {
       isCharging = false;
       chargeTime = 0;
     }
-    if ((selectedClass === "Mage" && magic < maxMagic - 5) || ((selectedClass === "Melee" && stamina < maxStamina) && onGround)) {
+    if ((selectedClass === "Mage" && magic < maxMagic - 5) || (selectedClass === "Melee" && stamina < maxStamina)) {
       isFocusing = true
-      chargingSound.rate(1.5)
-      chargingSound.loop()
+      if (chargingSound) { chargingSound.rate(1.5); chargingSound.loop(); }
       magic = min(maxMagic, magic + 0.5);
       stamina = min(maxStamina, stamina + 0.5);
       return;
     } else {
       isFocusing = false
-      chargingSound.stop()
+      if (chargingSound) chargingSound.stop()
     }
   }
   isFocusing = false
-  chargingSound.stop()
+  if (chargingSound) chargingSound.stop()
 
   if (keyPressMatches("jump", keyCode)) {
     tryJump();
@@ -1101,7 +1489,7 @@ function keyPressed() {
     if (!(canFindTimer("sprint")) && (energyMeasure > 10)) {
       sprintTimer = new Timer(10, "sprint")
       sprintCooldown = new Timer(20, "sprintCool")
-      sprintSound.play()
+      if (sprintSound) sprintSound.play()
       if (velY < 0) {
         velY = 0;
       }
@@ -1117,6 +1505,10 @@ function keyPressed() {
     }
     return;
 
+  }
+
+  if (keyPressMatches("special", keyCode) && mushroomReceived && specialBar >= maxSpecialBar && !isTimeStop && !isRageMode) {
+    triggerSpecialAbility();
   }
 
   if (key === ' ' || keyCode === ENTER) {
@@ -1136,7 +1528,7 @@ function initMusic() {
 }
 
 function keyReleased() {
-  if (gameState !== "introLevel" && gameState !== "introForest" && gameState !== "townLevel" && gameState !== "bossLevel") return;
+  if (gameState !== "introLevel" && gameState !== "introForest" && gameState !== "townLevel" && gameState !== "bossLevel" && gameState !== "tavernLevel" && gameState !== "dungeonLevel") return;
   if (keyPressMatches("heavyAttack", keyCode) && isCharging && selectedClass === "Mage") {
     fireHeavyMageProjectile();
     isCharging = false;
@@ -1144,7 +1536,7 @@ function keyReleased() {
   }
   if (keyPressMatches("focus", keyCode) && isFocusing) {
     isFocusing = false
-    chargingSound.stop()
+    if (chargingSound) chargingSound.stop()
   }
 }
 
@@ -1152,15 +1544,14 @@ function initIntroLevel(skipDialogue = false) {
   introStage = skipDialogue ? 4 : 0;
   cameraX = 0;
 
-  HP = 100;
-  maxHP = 100;
-  magic = 100;
-  maxMagic = 100;
-  stamina = 100;
-  maxStamina = 100;
+  HP = 300;
+  maxHP = 300;
+  magic = 225;
+  maxMagic = 225;
+  stamina = 200;
+  maxStamina = 200;
 
-  sfxAmbience.setVolume(0.4);
-  sfxAmbience.loop();
+  if (sfxAmbience) { sfxAmbience.setVolume(0.4); sfxAmbience.loop(); }
 
   //introDialogue = "Placeholder intro text.";
   introPrompt = "Click to continue";
@@ -1248,6 +1639,7 @@ function decrementHealth() {
 }
 
 function decrementHealthBy(amount) {
+  if (isRageMode) amount = Math.ceil(amount * 0.5);
   HP -= amount;
   if (HP <= 0) {
     playerDie();
@@ -1272,6 +1664,31 @@ function drawHUD() {
     drawBar(x, y + 26, 180, 14, magic, maxMagic, color(0, 0, 80), "MP");
   } else {
     drawBar(x, y + 26, 180, 14, stamina, maxStamina, color(253, 216, 10), "ST");
+  }
+
+  if (mushroomReceived) {
+    let barCol = selectedClass === "Mage" ? color(80, 0, 120) : color(160, 0, 0);
+    let label  = selectedClass === "Mage" ? "DM" : "RG";
+    drawBar(x, y + 52, 180, 14, specialBar, maxSpecialBar, barCol, label);
+    if (specialBar >= maxSpecialBar) {
+      fill(255, 220, 80, 160 + sin(frameCount * 0.2) * 60);
+      textFont("Georgia");
+      textSize(10);
+      textAlign(CENTER, TOP);
+      text("[ G ]  ABILITY READY", x + 90, y + 52 + 18);
+    }
+  }
+
+  // Rage mode aura
+  if (isRageMode) {
+    let aura = sin(frameCount * 0.25) * 30;
+    fill(200, 40, 0, 40 + aura);
+    noStroke();
+    let px = playerX - cameraX;
+    let py = playerY;
+    ellipse(px + drawSize / 2, py + drawSize * 0.6, drawSize * 1.8, drawSize * 0.5);
+    fill(255, 100, 0, 60 + aura);
+    ellipse(px + drawSize / 2, py + drawSize / 2, drawSize * 1.2, drawSize * 1.4);
   }
 }
 
@@ -1597,6 +2014,13 @@ function layoutMenuButtons() {
   startButton.position(toScreenX(buttonX), toScreenY(startY));
   settingsButton.position(toScreenX(buttonX), toScreenY(startY + gap));
   quitButton.position(toScreenX(buttonX), toScreenY(startY + gap * 2));
+
+  if (devSkipBarButton) {
+    let devW = 180;
+    let devH = 28;
+    devSkipBarButton.size(devW * scaleFactor, devH * scaleFactor);
+    devSkipBarButton.position(toScreenX(GAME_W - devW - 12), toScreenY(GAME_H - devH - 12));
+  }
 }
 
 function layoutVolumeSliders() {
@@ -1739,15 +2163,15 @@ function updateUI() {
   pauseResumeButton.hide();
   pauseSettingsButton.hide();
   pauseQuitButton.hide();
-  level1DevButton.hide();
-  testLevelButton.hide();
-  bossLevelButton.hide();
   masterVolumeSlider.hide();
   musicVolumeSlider.hide();
   sfxVolumeSlider.hide();
   if (keyMappingButton) keyMappingButton.hide();
   mageButton.hide();
   meleeButton.hide();
+  if (barNextButton) barNextButton.hide();
+  if (barMuteButton) barMuteButton.hide();
+  if (devSkipBarButton) devSkipBarButton.hide();
 
   retryButton.hide();
 
@@ -1757,13 +2181,14 @@ function updateUI() {
     startButton.show();
     settingsButton.show();
     quitButton.show();
+    if (devSkipBarButton) devSkipBarButton.show();
   } else if (gameState === "poem") {
     backButton.show();
   } else if (gameState === "classSelect") {
     backButton.show();
     mageButton.show();
     meleeButton.show();
-  } else if (gameState === "introLevel" || gameState === "introForest" || gameState === "townLevel" || gameState === "bossLevel") {
+  } else if (gameState === "introLevel" || gameState === "introForest" || gameState === "townLevel" || gameState === "bossLevel" || gameState === "tavernLevel" || gameState === "dungeonLevel") {
     if (isPaused) {
       if (pauseSubScreen === "main") {
         pauseResumeButton.show();
@@ -1780,13 +2205,13 @@ function updateUI() {
       }
     } else {
       pauseMenuButton.show();
-      level1DevButton.show();
-      level1DevButton.position(toScreenX(GAME_W - 184), toScreenY(98));
-      testLevelButton.show();
-      testLevelButton.position(toScreenX(GAME_W - 184), toScreenY(144));
-      bossLevelButton.show();
-      bossLevelButton.position(toScreenX(GAME_W - 184), toScreenY(190));
+      if (gameState === "tavernLevel") {
+        barNextButton.position(toScreenX(GAME_W - 250), toScreenY(GAME_H - 60));
+        barNextButton.show();
+        barMuteButton.position(toScreenX(GAME_W - 120), toScreenY(GAME_H - 60));
+        barMuteButton.show();
       }
+    }
   } else if (gameState === "settings") {
     backButton.show();
     masterVolumeSlider.show();
@@ -1801,6 +2226,7 @@ function updateUI() {
     retryButton.show();
     console.log("should be deathscreen");
   }
+  // creditsScreen — all DOM hidden, canvas-only rendering
 }
 
 function drawPoemScreen() {
@@ -1989,20 +2415,18 @@ function drawLevelUpdates() {
 }
 
 function drawIntroLevelScreen() {
-  
+
   drawLevelUpdates();
   if (isPaused) return;
   drawIntroWorld();
   drawPlayer();
-  
+
   drawMageProjectiles();
+  drawRageProjectiles();
   drawIntroTopUI();
   drawHUD();
   if (fadingFromBlack) {
     skipDialogueButton.hide();
-    level1DevButton.hide();
-    testLevelButton.hide();
-    bossLevelButton.hide();
     pauseMenuButton.hide();
     return;
   }
@@ -2018,6 +2442,7 @@ function drawIntroForestScreen() {
   drawIntroForest();
   drawPlayer();
   drawMageProjectiles();
+  drawRageProjectiles();
   drawIntroTopUI();
   drawHUD();
   drawEnemyCounter();
@@ -2050,6 +2475,7 @@ function drawBossLevel() {
   bossRoom();
   drawPlayer();
   drawMageProjectiles();
+  drawRageProjectiles();
   drawIntroTopUI();
   drawHUD();
   if (isDialogue) drawIntroDialogueBox();
@@ -2077,6 +2503,7 @@ function drawTownLevel() {
   //drawVillageSky();
   drawPlayer();
   drawMageProjectiles();
+  drawRageProjectiles();
   drawIntroTopUI();
   drawHUD();
   if (havingNightmare) {
@@ -2089,13 +2516,195 @@ function drawTownLevel() {
 }
 
 
+function drawTavernLevel() {
+  drawLevelUpdates();
+  if (isPaused) return;
+  drawTavernRoom();
+  drawPlayer();
+  drawRageProjectiles();
+  drawIntroTopUI();
+  drawHUD();
+  if (isDialogue) drawIntroDialogueBox();
+  frameCalls();
+
+  // exit to dungeon trigger: right side of the tavern (blocked during dialogue / popup)
+  if (!isDialogue && !showMushroomPopup && mushroomReceived && playerX > worldWidth - drawSize - 20) {
+    for (let s of barPlaylist) s.stop();
+    initDungeonLevel();
+  }
+}
+
+function drawTavernRoom() {
+  push();
+  // floor and ceiling
+  background(28, 20, 14);
+  fill(40, 28, 18);
+  rect(0, 0, GAME_W, GAME_H);
+
+  // gradient ceiling beams
+  for (let bx = 0; bx < GAME_W + cameraX; bx += 160) {
+    fill(22, 15, 10, 200);
+    rect(bx - cameraX, 0, 30, groundY + drawSize, 0, 0, 4, 4);
+  }
+
+  // back wall
+  fill(55, 38, 22);
+  rect(-cameraX, 0, worldWidth, groundY + drawSize);
+
+  // brick pattern on back wall
+  stroke(35, 25, 14, 120);
+  strokeWeight(1);
+  for (let row = 0; row < 10; row++) {
+    let rowY = row * 54;
+    let offset = (row % 2) * 80;
+    for (let col = -1; col < 18; col++) {
+      rect(col * 160 + offset - cameraX, rowY, 150, 48, 2);
+    }
+  }
+  noStroke();
+
+  // floor boards
+  fill(60, 40, 20);
+  rect(0, groundY + drawSize * 0.55, GAME_W, GAME_H);
+  stroke(40, 28, 12, 100);
+  strokeWeight(1);
+  for (let fx = 0; fx < GAME_W + cameraX; fx += 60) {
+    line(fx - cameraX, groundY + drawSize * 0.55, fx - cameraX, GAME_H);
+  }
+  noStroke();
+
+  // bar counter on right side
+  let barX = worldWidth - 350 - cameraX;
+  fill(80, 55, 28);
+  rect(barX, groundY - 60, 340, 60 + drawSize * 0.55, 4, 4, 0, 0);
+  fill(100, 70, 35);
+  rect(barX, groundY - 68, 340, 14, 4);
+  // kegs
+  for (let k = 0; k < 3; k++) {
+    fill(90, 60, 25);
+    ellipse(barX + 40 + k * 80, groundY - 90, 44, 60);
+    fill(70, 45, 18);
+    rect(barX + 20 + k * 80, groundY - 120, 44, 30, 3);
+    fill(160, 120, 60, 180);
+    ellipse(barX + 42 + k * 80, groundY - 105, 20, 8);
+  }
+
+  // candles on tables
+  let tablePositions = [180, 400, 650];
+  for (let tx of tablePositions) {
+    let realTx = tx - cameraX;
+    // table
+    fill(70, 48, 24);
+    rect(realTx - 50, groundY - 30, 100, 30 + drawSize * 0.55, 3, 3, 0, 0);
+    fill(85, 60, 30);
+    rect(realTx - 60, groundY - 38, 120, 12, 3);
+    // candle
+    fill(240, 235, 200);
+    rect(realTx - 6, groundY - 68, 12, 30, 2);
+    // flame
+    let flicker = sin(frameCount * 0.15 + tx) * 3;
+    fill(255, 200, 80, 220);
+    ellipse(realTx, groundY - 72 + flicker, 8, 14);
+    fill(255, 240, 180, 160);
+    ellipse(realTx, groundY - 74 + flicker, 5, 9);
+    // candle glow
+    fill(255, 180, 60, 18);
+    ellipse(realTx, groundY - 60, 60, 60);
+
+    // Patron — use varied sprites
+    let patronSprites = [npc2Sprite, npc4Sprite, npc3Sprite];
+    let pSpr = patronSprites[tablePositions.indexOf(tx) % patronSprites.length];
+    if (pSpr) {
+      let npcSize = drawSize * 0.7;
+      tint(255, 255);
+      image(pSpr, realTx - npcSize * 0.5, groundY - drawSize * 0.6 - npcSize, npcSize, npcSize);
+    }
+    // beer mug on table
+    fill(220, 180, 60, 200);
+    rect(realTx + 20, groundY - 50, 14, 18, 2);
+    fill(255, 255, 255, 80);
+    ellipse(realTx + 27, groundY - 50, 14, 6);
+  }
+
+  // barkeeper NPC behind bar
+  if (npc5Sprite) {
+    let npcSize = drawSize * 0.85;
+    tint(255, 255);
+    image(npc5Sprite, worldWidth - 220 - cameraX, groundY - npcSize - 60, npcSize, npcSize);
+  }
+  tint(255, 255);
+  // Talk hint near bar
+  if (!mushroomReceived && playerX > worldWidth - 520) {
+    fill(255, 240, 160, 200);
+    textAlign(CENTER, CENTER);
+    textFont("Georgia");
+    textSize(13);
+    text("[ Hold S to talk ]", worldWidth - 160 - cameraX, groundY - drawSize * 0.85 - drawSize - 20);
+  }
+
+  // "EXIT →" sign on right wall
+  fill(180, 140, 60, 200);
+  rect(worldWidth - 60 - cameraX, groundY - 110, 55, 34, 4);
+  fill(240, 220, 160);
+  textAlign(CENTER, CENTER);
+  textFont("Georgia");
+  textSize(11);
+  text("EXIT →", worldWidth - 32 - cameraX, groundY - 93);
+
+  // "TAVERN" sign above bar
+  fill(100, 70, 30);
+  rect(worldWidth - 370 - cameraX, 30, 200, 48, 4);
+  fill(240, 210, 120);
+  textAlign(CENTER, CENTER);
+  textFont("Georgia");
+  textSize(20);
+  text("THE WEARY SWORD", worldWidth - 270 - cameraX, 54);
+
+  // bottom ground rect
+  fill(50, 34, 18);
+  rect(0, groundY + drawSize * 0.55, GAME_W, GAME_H);
+
+  pop();
+}
+
+function drawDungeonLevelScreen() {
+  drawLevelUpdates();
+  if (isPaused) return;
+  bossRoom();
+  drawPlayer();
+  drawMageProjectiles();
+  drawRageProjectiles();
+  drawIntroTopUI();
+  drawHUD();
+  drawEnemyCounter();
+  if (isDialogue) drawIntroDialogueBox();
+  frameCalls();
+}
+
 function updatePlayer() {
+  // Special ability timers
+  if (isTimeStop) {
+    timeStopTimer--;
+    if (timeStopTimer <= 0) {
+      isTimeStop = false; timeStopTimer = 0;
+      if (specialMusicRef) { specialMusicRef.play(); specialMusicRef = null; }
+    }
+  }
+  if (isRageMode) {
+    rageModeTimer--;
+    if (rageModeTimer <= 0) {
+      isRageMode = false; rageModeTimer = 0;
+      if (specialMusicRef) { specialMusicRef.play(); specialMusicRef = null; }
+    }
+  }
+  updateRageProjectiles();
+
   let moving = false;
   if (!(sprinting)) {
     if (!playerLaunched) {
       if (!isFocusing) {
-        if (isBindingDown("moveRight")) { playerX += 5; moving = true; facingLeft = false; isFocusing = false; chargingSound.stop() }
-        if (isBindingDown("moveLeft"))  { playerX -= 5; moving = true; facingLeft = true; isFocusing = false; chargingSound.stop() }
+        if (isBindingDown("moveRight")) { playerX += 5; moving = true; facingLeft = false; isFocusing = false; if (chargingSound) chargingSound.stop() }
+        if (isBindingDown("moveLeft"))  { playerX -= 5; moving = true; facingLeft = true; isFocusing = false; if (chargingSound) chargingSound.stop() }
       }
     } else {
       if (!(canSprint) && velY >= 0 && !(canFindTimer("sprintCool"))) {
@@ -2237,10 +2846,10 @@ function updatePlayer() {
         magic = min(maxMagic, magic + 0.4);
         if (magic == maxMagic) {
           isFocusing = false;
-          chargingSound.stop()
+          if (chargingSound) chargingSound.stop()
         }
       } else {
-        magic = min(maxMagic, magic + 0.05);
+        magic = min(maxMagic, magic + 0.15);
       }
       if (prev < maxMagic && magic >= maxMagic && sfxBarFull) sfxBarFull.play();
     } else {
@@ -2249,10 +2858,10 @@ function updatePlayer() {
         stamina = min(maxStamina, stamina + 0.4);
         if (stamina == maxStamina) {
           isFocusing = false;
-          chargingSound.stop()
+          if (chargingSound) chargingSound.stop()
         }
       } else {
-        stamina = min(maxStamina, stamina + 0.05);
+        stamina = min(maxStamina, stamina + 0.15);
         
       }
       if (prev < maxStamina && stamina >= maxStamina && sfxBarFull) sfxBarFull.play();
@@ -2361,18 +2970,18 @@ function spawnLightMageProjectile() {
     animTimer: 0,
     hitEnemies: []
   });
-}
+}ƒ
 
 function fireHeavyMageProjectile() {
   if (chargeTime <= 0) return;
   let ratio = chargeTime / maxChargeTime;
-  let damage = lerp(22, 80, ratio);
-  if (ratio === 1.0) {
-    damage = 999999999;
+  let damage = lerp(30, 150, ratio);
+  if (ratio >= 1.0) {
+    damage = 200;
   }
   let radius = lerp(18, 55, ratio);
   let dir = facingLeft ? -1 : 1;
-  sfxHeavyMage.play();
+  if (sfxHeavyMage) sfxHeavyMage.play();
   mageProjectiles.push({
     x: playerX + drawSize / 2 + dir * (drawSize / 2 + 10),
     y: playerY + drawSize / 2,
@@ -2394,7 +3003,7 @@ function spawnLightMeleeAttack() {
   let info = getAtkInfo("light");
   meleeAttacks.push({
     type: "light",
-    damage: 20,
+    damage: isRageMode ? 15 * 1.45 : 15,
     dir: dir,
     x: playerX + (dir > 0 ? drawSize * 0.4 : -(info.drawW + drawSize * 0.4)),
     y: playerY + drawSize / 2 - info.drawH / 2,
@@ -2405,8 +3014,8 @@ function spawnLightMeleeAttack() {
   attackType = "light";
   attackFrame = 0;
   attackTimer = 0;
-  sfxLightMelee.play();
-  stamina = max(0, stamina - 25);
+  if (sfxLightMelee) sfxLightMelee.play();
+  stamina = max(0, stamina - (isRageMode ? 18 * 0.3 : 18));
 }
 
 function spawnHeavyMeleeAttack() {
@@ -2414,7 +3023,7 @@ function spawnHeavyMeleeAttack() {
   let info = getAtkInfo("heavy");
   meleeAttacks.push({
     type: "heavy",
-    damage: 40,
+    damage: isRageMode ? 40 * 1.45 : 40,
     dir: dir,
     x: playerX + (dir > 0 ? drawSize * 0.4 : -(info.drawW + drawSize * 0.4)),
     y: playerY + drawSize / 2 - info.drawH / 2,
@@ -2425,8 +3034,8 @@ function spawnHeavyMeleeAttack() {
   attackType = "heavy";
   attackFrame = 0;
   attackTimer = 0;
-  sfxHeavyMelee.play();
-  stamina = max(0, stamina - 50);
+  if (sfxHeavyMelee) sfxHeavyMelee.play();
+  stamina = max(0, stamina - (isRageMode ? 32 * 0.3 : 32));
 }
 
 function updateMeleeAttacks() {
@@ -2549,12 +3158,27 @@ function mousePressed() {
     return;
   }
 
-  if (gameState !== "introLevel" && gameState !== "introForest" && gameState !== "townLevel" && gameState !== "bossLevel") return;
+  if (showMushroomPopup) {
+    showMushroomPopup = false;
+    return;
+  }
+
+  if (gameState === "creditsScreen") {
+    // Only return to menu once the scrolling credits have finished
+    let totalH = 0;
+    for (let line of CREDITS_ROLL) totalH += (line.size || 14) * 1.4 + (line.gap || 10);
+    if (creditsScrollY + totalH < 20) {
+      stopMusic();
+      gameState = "menu";
+      updateUI();
+    }
+    return;
+  }
+
+  if (gameState !== "introLevel" && gameState !== "introForest" && gameState !== "townLevel" && gameState !== "bossLevel" && gameState !== "tavernLevel" && gameState !== "dungeonLevel") return;
   if (isPaused) return;
   // ignore clicks on the back button area (top-left)
   if (mouseX < 140 && mouseY < 70) return;
-  // ignore clicks where the Level 1 (dev) button sits (below objective panel)
-  if (gameMX() > GAME_W - 200 && gameMY() > 88 && gameMY() < 234) return;
   if (!mouseReleased) return;
   if (isDialogue) return;
 
@@ -2576,24 +3200,24 @@ function updateIntroLevel() {
   introPrompt = "";
 
   if (introStage === 0) {
-    introObjective = "Begin";
-    introDialogue = "Placeholder intro text.";
+    introObjective = "Speak with the fairy";
+    introDialogue = "A strange presence lingers in the air...";
     introPrompt = "Click to continue";
   } else if (introStage === 1) {
-    introObjective = "Continue";
-    introDialogue = "Placeholder.";
+    introObjective = "Explore the area";
+    introDialogue = "Move right and get a feel for your abilities.";
     introPrompt = "Click to continue";
   } else if (introStage === 2) {
-    introObjective = "Continue";
-    introDialogue = "Placeholder.";
+    introObjective = "Defeat enemies";
+    introDialogue = "Enemies approach from the forest ahead. Stand your ground!";
     introPrompt = "Click to continue";
   } else if (introStage === 3) {
-    introObjective = "Continue";
-    introDialogue = "Placeholder.";
+    introObjective = "Go right to continue";
+    introDialogue = "The path ahead leads deeper into the forest.";
     introPrompt = "Click to continue";
   } else {
-    introObjective = "Continue";
-    introDialogue = "Placeholder next area.";
+    introObjective = "Go right to continue";
+    introDialogue = "";
   }
 }
 
@@ -2938,7 +3562,8 @@ function getDefaultKeybinds() {
     lightAttack: { type: "key", code: 74, label: "J" },
     sprint:      { type: "key", code: 16, label: "Shift"},
     focus:       { type: "key", code: 76, label: "L"},
-    interact:    { type: "key", code: 83, label: "S"}
+    interact:    { type: "key", code: 83, label: "S"},
+    special:     { type: "key", code: 71, label: "G"}
   };
 }
 
@@ -3039,8 +3664,8 @@ function triggerLightAttack() {
 
   if (selectedClass === "Mage") {
     spawnLightMageProjectile();
-    sfxLightMage.play();
-    magic = max(0, magic - 5);
+    if (sfxLightMage) sfxLightMage.play();
+    magic = max(0, magic - 18);
   } else {
     spawnLightMeleeAttack();
   }
@@ -3051,11 +3676,109 @@ function triggerHeavyAttack() {
   if (magic <= 15 || stamina <= 15) return;
 
   if (selectedClass === "Mage") {
-    magic = max(0, magic - 20)
+    magic = max(0, magic - 30)
     isCharging = true;
     chargeTime = 0;
+  } else if (isRageMode) {
+    spawnGetsugatensho();
   } else {
     spawnHeavyMeleeAttack();
+  }
+}
+
+function triggerSpecialAbility() {
+  specialBar = 0;
+  // Pause whatever music is currently playing
+  specialMusicRef = null;
+  for (let t of musicTrack) {
+    if (t.sound && t.sound.isPlaying()) {
+      specialMusicRef = t.sound;
+      t.sound.pause();
+      break;
+    }
+  }
+  if (selectedClass === "Mage") {
+    isTimeStop = true;
+    timeStopTimer = 420;
+    if (sfxZaWarudo) { sfxZaWarudo.stop(); sfxZaWarudo.play(); }
+  } else {
+    isRageMode = true;
+    rageModeTimer = 420;
+    if (sfxSaiyan) { sfxSaiyan.stop(); sfxSaiyan.play(); }
+  }
+}
+
+function spawnGetsugatensho() {
+  let dir = facingLeft ? -1 : 1;
+  let dmg = 40 * 1.45;
+  rageProjectiles.push({
+    x: playerX + drawSize / 2 + dir * (drawSize / 2),
+    y: playerY + drawSize * 0.4,
+    velX: dir * 13,
+    dir: dir,
+    damage: dmg,
+    w: 120,
+    h: 28,
+    distTraveled: 0,
+    maxDist: 900,
+    frame: 0,
+    hitEnemies: []
+  });
+  stamina = max(0, stamina - (isRageMode ? 32 * 0.3 : 32));
+  attackType = "heavy";
+  attackFrame = 0;
+  attackTimer = 0;
+  if (sfxHeavyMelee) sfxHeavyMelee.play();
+}
+
+function updateRageProjectiles() {
+  for (let i = rageProjectiles.length - 1; i >= 0; i--) {
+    let p = rageProjectiles[i];
+    p.x += p.velX;
+    p.distTraveled += abs(p.velX);
+    p.frame++;
+
+    // hit detection against enemies
+    for (let j = 0; j < entityCount; j++) {
+      if (entities[j].constructor !== Enemy) continue;
+      let e = entities[j];
+      if (p.hitEnemies.includes(e)) continue;
+      let info = e.sprite_info;
+      let ew = info["sprite_size"][0] * info["scale"];
+      let ex = e.x;
+      let ey = e.y - info["walk_pos_delta"];
+      let px = p.x - p.w / 2;
+      let py = p.y - p.h / 2;
+      if (rectsOverlap(ex, ey, ew, ew, px, py, p.w, p.h)) {
+        e.health -= p.damage;
+        if (typeof specialBar !== 'undefined' && mushroomReceived) specialBar = min(maxSpecialBar, specialBar + p.damage * 0.5);
+        p.hitEnemies.push(e);
+      }
+    }
+
+    let screenX = p.x - cameraX;
+    if (p.distTraveled >= p.maxDist || screenX < -150 || screenX > GAME_W + 150) {
+      rageProjectiles.splice(i, 1);
+    }
+  }
+}
+
+function drawRageProjectiles() {
+  if (!atkHeavySheet || rageProjectiles.length === 0) return;
+  for (let p of rageProjectiles) {
+    let screenX = p.x - cameraX;
+    if (screenX < -drawSize || screenX > GAME_W + drawSize) continue;
+    let animFrame = floor(p.frame / 8) % 3;
+    let sx = animFrame * frameWidth;
+    push();
+    if (p.dir < 0) {
+      translate(screenX, p.y - drawSize / 2);
+      scale(-1, 1);
+      image(atkHeavySheet, -drawSize / 2, 0, drawSize, drawSize, sx, 0, frameWidth, 320);
+    } else {
+      image(atkHeavySheet, screenX - drawSize / 2, p.y - drawSize / 2, drawSize, drawSize, sx, 0, frameWidth, 320);
+    }
+    pop();
   }
 }
 
