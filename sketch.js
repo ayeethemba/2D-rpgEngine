@@ -3071,7 +3071,7 @@ function spawnLightMageProjectile() {
 function fireHeavyMageProjectile() {
   if (chargeTime <= 0) return;
   let ratio = chargeTime / maxChargeTime;
-  let damage = lerp(30, 150, ratio);
+  let damage = lerp(15, 150, ratio);
   if (ratio >= 1.0) {
     damage = 9999999;
   }
