@@ -1101,7 +1101,7 @@ function draw() {
   fill(0, 0, 0)
   rect(-(window.width / 20), 0, (window.width / 20), window.height)
   rect((GAME_W), 0, (window.width / 20), window.height)
-  console.log(GAME_W);
+  //console.log(GAME_W);
 
   
   //text(timers.length, playerX - cameraX, height / 2)
@@ -2409,14 +2409,32 @@ function drawQuitScreen() {
 }
 
 function pauseCheck() {
+  //image(pauseSnapshot, 0, 0, GAME_W, GAME_H);
   if (pauseSnapshot) {
       image(pauseSnapshot, 0, 0, GAME_W, GAME_H);
     } else {
       // first paused frame, draw world, including enemies, then snapshot
-      drawIntroWorld();
+      if (gameState == "introLevel") {
+        drawIntroWorld();
+      } 
+      if (gameState == "introForest") {
+        drawIntroForest();
+      }
+      if (gameState == "townLevel") {
+        drawVillageWorld();
+      }
+      if (gameState == "bossLevel") {
+        bossRoom();
+      }
+      if (gameState == "tavernLevel") {
+        drawTavernRoom();
+      }
+      if (gameState == "dungeonLevel") {
+        bossRoom();
+      }
       drawPlayer();
       drawMageProjectiles();
-      drawIntroTopUI();
+      //drawIntroTopUI();
       drawHUD();
       if (isDialogue) drawIntroDialogueBox();
       frameCalls();
@@ -3027,7 +3045,7 @@ function spawnLightMageProjectile() {
     animTimer: 0,
     hitEnemies: []
   });
-}ƒ
+}
 
 function fireHeavyMageProjectile() {
   if (chargeTime <= 0) return;
@@ -3203,10 +3221,10 @@ function drawChargeEffect() {
 }
 
 function mousePressed() {
-  if (gameState == "introForest") {
-    console.log(mouseX);
-    console.log(mouseY);
-  }
+  // if (gameState == "introForest") {
+  //   console.log(mouseX);
+  //   console.log(mouseY);
+  // }
 
   // 1. keymap screen swallows clicks before anything else
   let inKeyMapping = (gameState === "keyMapping") || (isPaused && pauseSubScreen === "keymap");
