@@ -1097,14 +1097,12 @@ function draw() {
   }
   prevMouseIsPressedState = mouseIsPressed;
 
+
   fill(0, 0, 0)
-  rect(-(width / 20), 0, (width / 20), height)
-  rect((width - (width / 4)), 0, (width / 20), height)
-  fill(255, 255, 255)
-  textSize(30)
-  //text(canFindTimer("sprint"), playerX - cameraX, height / 2)
-  fill(255, 255, 255)
-  textSize(30)
+  rect(-(window.width / 20), 0, (window.width / 20), window.height)
+  rect((GAME_W), 0, (window.width / 20), window.height)
+  console.log(GAME_W);
+
   
   //text(timers.length, playerX - cameraX, height / 2)
   
