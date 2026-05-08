@@ -1072,6 +1072,8 @@ function draw() {
 
   let musicMul = musicVolumeSlider.value() / 100;
   for (let t of musicTrack) t.sound.setVolume(t.base * musicMul);
+  for (let a of barPlaylist) a.setVolume(0.4 * musicMul);
+
 
   let sfxMul = sfxVolumeSlider.value() / 100;
   for (let t of sfxTrack) t.sound.setVolume(t.base * sfxMul);
@@ -2830,11 +2832,11 @@ function updatePlayer() {
     }
 
     if (!onGround) {
-      currentFrame = 1;
+      currentFrame = 4;
     } else if (moving) {
       animTimer++;
       if (animTimer % 8 === 0) moveFrameIndex = (moveFrameIndex + 1) % 3;
-      currentFrame = 2 + moveFrameIndex;
+      currentFrame = 5 + moveFrameIndex;
     } else {
       currentFrame = 0;
       moveFrameIndex = 0;
@@ -2843,6 +2845,7 @@ function updatePlayer() {
   } else {
     if (sprinting) {
       playerX += sprintVel;
+      currentFrame = 2;
     } else if (!onGround) {
       playerY += sin(frameCount * 0.3)
     }
@@ -2883,6 +2886,7 @@ function updatePlayer() {
     if (selectedClass === "Mage") {
       let prev = magic;
       if (isFocusing) {
+        currentFrame = 3;
         magic = min(maxMagic, magic + 0.4);
         if (gameState === "bossLevel") {
           magic = min(maxMagic, magic + 0.5);
@@ -2901,6 +2905,7 @@ function updatePlayer() {
     } else {
       let prev = stamina;
       if (isFocusing) {
+        currentFrame = 3;
         stamina = min(maxStamina, stamina + 0.4);
         if (gameState === "bossLevel") {
           stamina = min(maxStamina, stamina + 0.5);
