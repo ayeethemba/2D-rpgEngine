@@ -700,6 +700,12 @@ function preload() {
   sfxBarFull  = loadSound("sounds/bar full.mp3");
   sfxTextLoop = loadSound("sounds/text loop.mp3");
 
+  enemy_sml_sfx = loadSound("sounds/enemy_sml_sfx.mp3");
+  enemy_med_sfx = loadSound("sounds/enemy_med_sfx.mp3");
+  enemy_lar_sfx = loadSound("sounds/enemy_lar_sfx.mp3");
+  boss_spawn_sfx = loadSound("sounds/boss_spawn_sfx.mp3");
+  boss_atk_sfx = loadSound("sounds/boss_attack_sfx.mp3");
+
   musicTrack = [
   { sound: musicIntro, base: 0.4 },
   { sound: musicDream, base: 0.4 },
@@ -725,7 +731,12 @@ sfxTrack = [
   { sound : hurtSound2, base: 2.0},
   { sound : chargingSound, base: 0.5},
   { sound: sfxZaWarudo, base: 0.7 },
-  { sound: sfxSaiyan,   base: 0.8 }
+  { sound: sfxSaiyan,   base: 0.8 },
+  { sound: enemy_sml_sfx,   base: 0.7},
+  { sound: enemy_med_sfx,   base: 0.7},
+  { sound: enemy_lar_sfx,   base: 0.7},
+  { sound: boss_spawn_sfx,   base: 0.8},
+  { sound: boss_atk_sfx,   base: 0.8}
 ];
 }
 

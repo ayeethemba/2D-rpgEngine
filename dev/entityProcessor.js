@@ -11,6 +11,14 @@ function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
     return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
 }
 
+function cleanEntities() {
+    let newEntities = []
+    for (i = 0; i < entityCount; i++) {
+        newEntities.push(entities[i])
+    }
+    entities = newEntities
+}
+
 //Function for methods that change in discrete steps over time
 //Example: a fireball moving or chars for dialogue to be added to text
 function frameCalls() {
@@ -42,6 +50,7 @@ function frameCalls() {
                 entities[i].frameChange();
             }
         } else {
+            
             if (entities[i].constructor === Timer) {
                 timerID = entities[i].getID();
                 ti = entities[i].getIndex();
@@ -67,6 +76,9 @@ function frameCalls() {
     }
     if (isDialogue) drawIntroDialogueBox();
     playerJustLanded = false;
+    if (entities.length > entityCount + 6) {
+        cleanEntities()
+    }
 
 }
 
@@ -289,6 +301,612 @@ class NPC extends Entity {
 
 }
 
+class CrossAtk extends Entity {
+    constructor(x, y, version) {
+        super()
+        this.displaySize = 100;
+        this.x = x
+        this.y = y
+        this.version = version
+        this.setSprites()
+        this.timer = 0
+        this.flipped = false
+        this.rotatedY = false
+        /*let xDiff = abs(this.x - playerX)
+        let yDiff = abs(this.y - playerY)
+        angleMode(DEGREES)
+        this.angle = atan(xDiff / yDiff)*/
+        //angleMode(RADIANS)
+        this.crossSpeed = 3
+        this.state = "spreading"
+        this.destinationX = random((this.x - 1000), (this.x + 1000))
+        this.destinationY = floor(random(this.y - 50, this.y + 100))
+        this.setStraightShot(this.destinationX, this.destinationY)
+    }
+
+    setStraightShot(sx, sy) {
+        this.flipped = false
+        this.rotatedY = false
+        let xDiff = abs(this.x - sx)
+        let yDiff = abs(this.y - sy)
+        angleMode(DEGREES)
+        this.angle = atan(xDiff / yDiff)
+        if (this.x < sx) {
+            this.angle = this.angle * -1
+            this.flipped = true
+            this.xVel = sin(this.angle) * this.crossSpeed
+        } else {
+            this.xVel = -1 * sin(this.angle) * this.crossSpeed
+        } 
+        
+        if (this.y < sy) {
+            this.yVel = cos(this.angle) * this.crossSpeed
+        } else {
+            if (this.flipped) {
+                this.angle = 90 + (90 - (this.angle % 90))
+                this.yVel = -1 * cos(this.angle) * this.crossSpeed
+            } else {
+                this.angle = 180 - (this.angle % 90)
+                this.yVel = -1 * cos(this.angle) * this.crossSpeed
+            }
+            this.rotatedY = true
+            
+        }
+    }
+
+    setSprites() {
+        this.img = loadImage("sprites/sprint6/bossCross.png")
+        this.spriteSize = 200
+    }
+
+    isAlive() {
+        return this.timer < 200
+    }
+
+    frameChange() {
+        this.timer++
+        this.process()
+    }
+
+    process() {
+        let crossX = this.x - cameraX
+        push();
+        angleMode(DEGREES)
+        translate(crossX + (this.displaySize / 2), this.y + (this.displaySize / 2))
+        rotate((this.angle))
+        image(
+            this.img, //image
+            (this.displaySize / 2) * -1, //x
+            (this.displaySize / 2) * -1, //y
+            this.displaySize, //img h
+            this.displaySize, //img w
+            200 * this.version, //correct frame
+            0, //i dont know what this variable is
+            this.spriteSize, //i dont know
+            this.spriteSize //i dont know but it works
+        )
+        fill(255, 0, 0, 100)
+        //rect(((this.displaySize / 2) * -1) + (this.displaySize / 5), (this.displaySize / 2) * -1, this.displaySize - (this.displaySize / 5), this.displaySize)
+        //enemyHitboxCheck(((this.displaySize / 2) * -1) + (this.displaySize / 5), (this.displaySize / 2) * -1, this.displaySize - (this.displaySize / 5), this.displaySize, 15)
+        if (this.state === "attacking" || this.state === "spreading") {
+            if (this.rotatedY) {
+                this.y -= this.yVel * this.crossSpeed
+            } else {
+                this.y += this.yVel * this.crossSpeed
+            }
+            if (this.flipped) {
+                this.x -= this.xVel * this.crossSpeed
+            } else {
+                this.x += this.xVel * this.crossSpeed
+            }
+        }
+        pop();
+        if (this.state === "spreading") {
+            if (abs(this.x - this.destinationX) < 20 && abs(this.y - this.destinationY) < 20) {
+                this.state = "attacking"
+                this.setStraightShot(playerX, playerY)
+            }
+        }
+        //hitboxQuad = [this.x, this.y, ]
+        /*let points = [
+            { x: crossX, y: this.y },                                   // Top Left
+            { x: crossX + this.displaySize, y: this.y + (this.displaySize / 4) },                // Top Right
+            { x: crossX + this.displaySize, y: this.y + this.displaySize - (this.displaySize / 4) }, // Bottom Right
+            { x: crossX, y: this.y + this.displaySize - (this.displaySize / 4) }                 // Bottom Left
+        ];
+        let rad = radians(this.angle);
+        let cosA = cos(rad);
+        let sinA = sin(rad);
+        let cx = crossX + (this.displaySize / 2);
+        let cy = this.y + (this.displaySize / 2);
+
+        // 3. Rotate each point around the center (cx, cy)
+        this.hitboxQuad = points.map(p => {
+            // Distance from the center of rotation to the vertex
+            let dx = p.x - cx;
+            let dy = p.y - cy;
+
+            return {
+                x: cx + (dx * cosA - dy * sinA),
+                y: cy + (dx * sinA + dy * cosA)
+            };
+        });*/
+        //fill(255, 0, 0, 100)
+        //rect(this.hitboxQuad[0].x, this.hitboxQuad[0].y, this.hitboxQuad[2].x, this.hitboxQuad[2].y)
+        //enemyHitboxCheck(this.hitboxQuad[0].x, this.hitboxQuad[0].y, this.hitboxQuad[2].x, this.hitboxQuad[2].y, 10)
+        //rect(crossX + (this.displaySize / 4), this.y + (this.displaySize / 4), this.displaySize / 2, this.displaySize / 2)
+        enemyHitboxCheck(crossX + (this.displaySize / 4), this.y + (this.displaySize / 4), this.displaySize / 2, this.displaySize / 2, 15)
+    }
+    
+}
+
+class Boss extends Entity {
+    constructor() {
+        super();
+        this.timer = 0
+        enemiesAlive++;
+        this.health = 1500;
+        this.setSprites();
+        this.x = 1000
+        this.direction = "L"
+        this.type = "boss";
+        this.state = "walking";
+        this.enemy_frame = 0;
+        this.onGround = false;
+        this.huntCount = 0
+        this.huntLocation = playerX
+
+        //spawn, hunt
+        //spawn spawns projectiles, hunt moves it to the player to attack
+        this.mode = "spawn"
+
+        //spawn location
+        this.y = 100; // spawn location
+        this.xVel = 0;
+        this.yVel = 0;
+        this.ableToJump;
+        this.madeCross = false
+
+        this.spawnedIn = true;
+
+        //im ngl this is the stupidest variable 
+        //i just dont like using AI cuz its bad
+        //for the environment
+        //so excuse this bad code
+        this.deathJump = -5;
+    }
+
+    setSprites() {
+        this.sprite_info = {
+            "sheet": "sprites/sprint3/boss_70x70.png",
+            "walk_start": 1,
+            "walk_end": 5,
+            "walk_speed": 10,
+            "jump": 2,
+            "atk_sheet": "sprites/sprint6/bossSummon.png",
+            "meleeAtk_sheet": "sprites/sprint3/boss_atk_70x70.png",
+            "atk_start": 0,
+            "atk_end": 8,
+            "range_atk_start": 0,
+            "range_atk_end": 16,
+            "sprite_size": [700, 700],
+            "walk_pos_delta": 265,
+            "atk_sprite_size": [700, 700],
+            "atk_pos_delta": 265,
+            "scale": 1 / 2,
+            "stillFrame": 0,
+            "atkSizeDiff": 0
+        }
+        this.bossDrawSize = this.sprite_info["sprite_size"][1] * this.sprite_info["scale"]
+        this.health = 1500;
+        this.maxHealth = 1500;
+        this.ableToJump = false;
+        this.attackSpeed = 0.01
+        this.img0 = loadImage(this.sprite_info["sheet"]);
+        this.img1 = loadImage(this.sprite_info["meleeAtk_sheet"]);
+        this.summonImg = loadImage(this.sprite_info["atk_sheet"]);
+    }
+
+    isAlive() {
+        if (this.health <= 0) {
+            this.health = 0;
+            this.yVel = this.deathJump;
+            this.y += this.yVel;
+            this.state = "jumping";
+            if (this.deathJump == -5) {
+                //game end
+            }
+            this.deathJump += 0.1;
+            this.deathJump = constrain(this.deathJump, -5, 3.1);
+            if (this.deathJump > 3) {
+                enemiesAlive--;
+                if (enemiesAlive < 0) enemiesAlive = 0;
+                return false;
+            }
+        }
+        return true;
+    }
+
+    frameChange() {
+
+        if (this.state === "attackDown") {
+            this.enemy_frame += 0.25
+        } else if (this.state === "attackRecoil") {
+            if (floor(this.enemy_frame) == 8) {
+                this.enemy_frame -= 0.1
+            } else {
+                this.enemy_frame -= 1;
+            }
+        } else {
+            this.enemy_frame += 0.13
+        }
+
+        if ((gameState === "bossLevel") && this.spawnedIn) {
+            if (this.health > 0) {
+                //gameState = "introForest"
+                this.load_Boss();
+                this.moveAndJumpAndGravity();
+                this.intelligence();
+                this.processHealth();
+            } else {
+                tint(255, map(this.deathJump, -5, 3, 255, 0, true));
+                this.load_Boss();
+            }
+            tint(255, 255);
+        }
+
+        if (playerX > worldWidth - drawSize - 500) {
+            this.spawnedIn = true;
+        }
+    }
+
+    load_Boss() {
+        let thisEnemyX = this.x - cameraX;
+        switch (this.state) {
+            case "walking":
+                if (this.direction == "R") {
+                    image(
+                        this.img0, //image
+                        thisEnemyX, //x
+                        this.y - this.sprite_info["walk_pos_delta"], //y
+                        this.sprite_info["sprite_size"][1] * this.sprite_info["scale"], //img h
+                        this.sprite_info["sprite_size"][0] * this.sprite_info["scale"], //img w
+                        this.sprite_info["sprite_size"][0] * floor(this.enemy_frame), //correct frame
+                        0, //i dont know what this variable is
+                        this.sprite_info["sprite_size"][0], //i dont know
+                        this.sprite_info["sprite_size"][0] //i dont know but it works
+                    )
+                } else {
+                    push();
+                    translate(thisEnemyX + (this.sprite_info["sprite_size"][0] * this.sprite_info["scale"]), this.y); //flips it while maintaining pos
+                    scale(-1, 1);
+                    image(
+                        this.img0,
+                        0,
+                        0 - this.sprite_info["walk_pos_delta"],
+                        this.sprite_info["sprite_size"][1] * this.sprite_info["scale"],
+                        this.sprite_info["sprite_size"][0] * this.sprite_info["scale"],
+                        this.sprite_info["sprite_size"][0] * floor(this.enemy_frame),
+                        0,
+                        this.sprite_info["sprite_size"][0],
+                        this.sprite_info["sprite_size"][0]
+                    );
+                    pop();
+                }
+                if (this.enemy_frame > this.sprite_info["walk_end"]) {
+                    this.enemy_frame = this.sprite_info["walk_start"];
+                }
+                break;
+            case "jumping":
+                //bow
+                if (this.direction == "R") {
+                    image(
+                        this.img0, //image
+                        thisEnemyX, //x
+                        this.y - this.sprite_info["walk_pos_delta"], //y
+                        this.sprite_info["sprite_size"][1] * this.sprite_info["scale"], //img h
+                        this.sprite_info["sprite_size"][0] * this.sprite_info["scale"], //img w
+                        this.sprite_info["sprite_size"][0] * this.sprite_info["jump"], //correct frame
+                        0, //i dont know what this variable is
+                        this.sprite_info["sprite_size"][0], //i dont know
+                        this.sprite_info["sprite_size"][0] //i dont know but it works
+                    )
+                } else {
+                    push();
+                    translate(thisEnemyX + (this.sprite_info["sprite_size"][0] * this.sprite_info["scale"]), this.y); //flips it while maintaining pos
+                    scale(-1, 1);
+                    image(
+                        this.img0,
+                        0,
+                        0 - this.sprite_info["walk_pos_delta"],
+                        this.sprite_info["sprite_size"][1] * this.sprite_info["scale"],
+                        this.sprite_info["sprite_size"][0] * this.sprite_info["scale"],
+                        this.sprite_info["sprite_size"][0] * this.sprite_info["jump"],
+                        0,
+                        this.sprite_info["sprite_size"][0],
+                        this.sprite_info["sprite_size"][0]
+                    );
+                    pop();
+                }
+
+                this.enemy_frame = this.sprite_info["jump"];
+
+                break;
+            case "hunt":
+                this.huntLocation = playerX - (this.bossDrawSize / 2) + (drawSize / 2)
+                this.state = "walking"
+                this.huntCount++
+                break;
+            case "attackDown":
+                //this.timer = 0
+                //bow
+                if (this.direction == "R") {
+                    image(
+                        this.img1, //image
+                        thisEnemyX - ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), //x
+                        this.y - this.sprite_info["atk_pos_delta"], //y
+                        this.sprite_info["atk_sprite_size"][0] * this.sprite_info["scale"], //img h
+                        this.sprite_info["atk_sprite_size"][1] * this.sprite_info["scale"], //img w
+                        this.sprite_info["atk_sprite_size"][0] * floor(this.enemy_frame),
+                        0,
+                        this.sprite_info["atk_sprite_size"][0],
+                        this.sprite_info["atk_sprite_size"][0]
+                    )
+                    enemyHitboxer(thisEnemyX - ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), this.y - this.sprite_info["atk_pos_delta"], this.bossDrawSize, "boss", this.enemy_frame, 1)
+                } else {
+                    push();
+                    translate(thisEnemyX + (this.sprite_info["atk_sprite_size"][0] * this.sprite_info["scale"]), this.y);
+                    scale(-1, 1);
+                    image(
+                        this.img1, //image
+                        ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), //x -1 * (this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2
+                        0 - this.sprite_info["atk_pos_delta"], //y
+                        this.sprite_info["atk_sprite_size"][0] * this.sprite_info["scale"], //img h
+                        this.sprite_info["atk_sprite_size"][1] * this.sprite_info["scale"], //img w
+                        this.sprite_info["atk_sprite_size"][0] * floor(this.enemy_frame),
+                        0,
+                        this.sprite_info["atk_sprite_size"][0],
+                        this.sprite_info["atk_sprite_size"][0]
+                    )
+                    pop();
+                    enemyHitboxer(thisEnemyX - ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), this.y - this.sprite_info["atk_pos_delta"], this.bossDrawSize, "boss", this.enemy_frame, -1)            
+                }
+                if (this.enemy_frame > floor(this.sprite_info["atk_end"])) {
+                    this.enemy_frame = this.sprite_info["atk_end"] + 0.85
+                    this.state = "attackRecoil"
+                }
+                break;
+            case "attackRecoil":
+                    if (this.direction == "R") {
+                    image(
+                        this.img1, //image
+                        thisEnemyX - ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), //x
+                        this.y - this.sprite_info["atk_pos_delta"], //y
+                        this.sprite_info["atk_sprite_size"][0] * this.sprite_info["scale"], //img h
+                        this.sprite_info["atk_sprite_size"][1] * this.sprite_info["scale"], //img w
+                        this.sprite_info["atk_sprite_size"][0] * floor(this.enemy_frame),
+                        0,
+                        this.sprite_info["atk_sprite_size"][0],
+                        this.sprite_info["atk_sprite_size"][0]
+                    )
+                    //enemyHitboxer(thisEnemyX - ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), this.y - this.sprite_info["atk_pos_delta"], this.sprite_info["atk_sprite_size"][0] * this.sprite_info["scale"], this.type, this.enemy_frame, 1)
+                } else {
+                    push();
+                    translate(thisEnemyX + (this.sprite_info["atk_sprite_size"][0] * this.sprite_info["scale"]), this.y);
+                    scale(-1, 1);
+                    image(
+                        this.img1, //image
+                        ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), //x -1 * (this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2
+                        0 - this.sprite_info["atk_pos_delta"], //y
+                        this.sprite_info["atk_sprite_size"][0] * this.sprite_info["scale"], //img h
+                        this.sprite_info["atk_sprite_size"][1] * this.sprite_info["scale"], //img w
+                        this.sprite_info["atk_sprite_size"][0] * floor(this.enemy_frame),
+                        0,
+                        this.sprite_info["atk_sprite_size"][0],
+                        this.sprite_info["atk_sprite_size"][0]
+                    )
+                    pop();
+                    //enemyHitboxer(thisEnemyX - ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), this.y - this.sprite_info["atk_pos_delta"], this.sprite_info["atk_sprite_size"][0] * this.sprite_info["scale"], this.type, this.enemy_frame, -1)            
+                }
+                if (this.enemy_frame < this.sprite_info["atk_start"] + 1) {
+                    if (this.huntCount > 1) {
+                        this.madeCross = false;
+                        this.state = "spawning"
+                    } else {
+                        this.state = "hunt"
+                    }
+                }
+                break;
+            case "spawning":
+                if (this.direction == "R") {
+                    image(
+                        this.summonImg, //image
+                        thisEnemyX - ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), //x
+                        this.y - this.sprite_info["atk_pos_delta"], //y
+                        this.sprite_info["atk_sprite_size"][0] * this.sprite_info["scale"], //img h
+                        this.sprite_info["atk_sprite_size"][1] * this.sprite_info["scale"], //img w
+                        this.sprite_info["atk_sprite_size"][0] * floor(this.enemy_frame),
+                        0,
+                        this.sprite_info["atk_sprite_size"][0],
+                        this.sprite_info["atk_sprite_size"][0]
+                    )
+                    //enemyHitboxer(thisEnemyX - ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), this.y - this.sprite_info["atk_pos_delta"], this.bossDrawSize, "boss", this.enemy_frame, 1)
+                } else {
+                    push();
+                    translate(thisEnemyX + (this.sprite_info["atk_sprite_size"][0] * this.sprite_info["scale"]), this.y);
+                    scale(-1, 1);
+                    image(
+                        this.summonImg, //image
+                        ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), //x -1 * (this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2
+                        0 - this.sprite_info["atk_pos_delta"], //y
+                        this.sprite_info["atk_sprite_size"][0] * this.sprite_info["scale"], //img h
+                        this.sprite_info["atk_sprite_size"][1] * this.sprite_info["scale"], //img w
+                        this.sprite_info["atk_sprite_size"][0] * floor(this.enemy_frame),
+                        0,
+                        this.sprite_info["atk_sprite_size"][0],
+                        this.sprite_info["atk_sprite_size"][0]
+                    )
+                    pop();
+                    //enemyHitboxer(thisEnemyX - ((this.sprite_info["atkSizeDiff"] * this.sprite_info["scale"]) / 2), this.y - this.sprite_info["atk_pos_delta"], this.bossDrawSize, "boss", this.enemy_frame, -1)            
+                }
+                if (!this.madeCross && floor(this.enemy_frame) == 5) {
+                    let newCross = new CrossAtk(this.x + (this.bossDrawSize/ 2), this.y - ((this.bossDrawSize * 3) / 4), 1)
+                    let newCross1 = new CrossAtk(this.x + (this.bossDrawSize/ 3), this.y - ((this.bossDrawSize * 3) / 4), 0)
+                    let newCross2 = new CrossAtk(this.x + ((this.bossDrawSize * 2) / 3), this.y - ((this.bossDrawSize * 3) / 4), 2)
+                    this.madeCross = true
+                }
+                if (this.enemy_frame > floor(this.sprite_info["range_atk_end"])) {
+                    this.enemy_frame = this.sprite_info["range_atk_end"] + 0.85
+                    let newMode = floor(random(0, 10))
+                    if (newMode < 5) {
+                        this.madeCross = false;
+                        this.state = "spawning"
+                    } else {
+                        this.huntCount = 0
+                        this.state = "hunt"
+                    }
+                }
+                break
+            case "jumping":
+                image(
+                    this.img0, //image
+                    thisEnemyX, //x
+                    this.y - this.sprite_info["walk_pos_delta"], //y
+                    this.sprite_info["sprite_size"][1] * this.sprite_info["scale"], //img h
+                    this.sprite_info["sprite_size"][0] * this.sprite_info["scale"], //img w
+                    this.sprite_info["sprite_size"][0] * this.sprite_info["jump"], //correct frame
+                    0, //i dont know what this variable is
+                    this.sprite_info["sprite_size"][0], //i dont know
+                    this.sprite_info["sprite_size"][0] //i dont know but it works
+                )
+                break;
+
+            case "still":
+                if (this.direction == "R") {
+                        image(
+                        this.img0, //image
+                        thisEnemyX, //x
+                        this.y - this.sprite_info["walk_pos_delta"], //y
+                        this.sprite_info["sprite_size"][1] * this.sprite_info["scale"], //img h
+                        this.sprite_info["sprite_size"][0] * this.sprite_info["scale"], //img w
+                        this.sprite_info["sprite_size"][0] * this.sprite_info["stillFrame"], //correct frame
+                        0, //i dont know what this variable is
+                        this.sprite_info["sprite_size"][0], //i dont know
+                        this.sprite_info["sprite_size"][0] //i dont know but it works
+                    )
+                } else {
+                    push();
+                    translate(thisEnemyX + (this.sprite_info["sprite_size"][0] * this.sprite_info["scale"]), this.y);
+                    scale(-1, 1);
+                    image(
+                        this.img0, //image
+                        0, //x
+                        0 - this.sprite_info["walk_pos_delta"], //y
+                        this.sprite_info["sprite_size"][1] * this.sprite_info["scale"], //img h
+                        this.sprite_info["sprite_size"][0] * this.sprite_info["scale"], //img w
+                        this.sprite_info["sprite_size"][0] * this.sprite_info["stillFrame"], //correct frame
+                        0, //i dont know what this variable is
+                        this.sprite_info["sprite_size"][0], //i dont know
+                        this.sprite_info["sprite_size"][0] //i dont know but it works
+                    )
+                    pop();
+                }
+                
+                //break;
+
+        }
+
+        this.drawHealthBar();
+    }
+
+    drawHealthBar() {
+        fill(50, 50, 50)
+        rect(GAME_W/8, GAME_H/16, (GAME_W * 3) / 4, GAME_H / 16)
+        fill(255, 0, 0)
+        rect(GAME_W/8, GAME_H/16, ((GAME_W * 3) / 4) * (this.health / 1500), GAME_H / 16)
+    }
+
+    intelligence() {
+        if (this.state === "walking") {
+            if (this.x < this.huntLocation - 20) {
+                this.direction = "R"
+                this.x += this.sprite_info["walk_speed"]
+            } else if (this.x > this.huntLocation + 20) {
+                this.direction = "L"
+                this.x -= this.sprite_info["walk_speed"]
+            } else {
+                this.enemy_frame = 0
+                this.state = "attackDown"
+            }
+        }
+    }
+
+    moveAndJumpAndGravity() {
+
+        //if on ground stay on ground 
+        this.yVel += gravity;
+
+        if (this.y >= groundY) {
+            this.y = groundY;
+            this.yVel = 0;
+            this.onGround = true;
+            if (this.state === "jumping") {
+                this.state = "walking";
+            }
+        } else {
+            this.onGround = false;
+            this.state = "jumping";
+        }
+
+
+
+        //move the sprite!
+        this.y += this.yVel;
+        if (this.timer <= 0) this.x += this.xVel;
+        
+    }
+
+    processHealth() {
+        let ew = this.sprite_info["sprite_size"][0] * this.sprite_info["scale"];
+        let ex = this.x;
+        let ey = this.y - this.sprite_info["walk_pos_delta"];
+
+        // melee attacks — light stops on first hit per enemy, heavy hits each once
+        for (let a of meleeAttacks) {
+            if (a.hitEnemies.includes(this)) continue;
+            if (rectsOverlap(ex, ey, ew, ew, a.x, a.y, a.hitW, a.hitH)) {
+                this.health -= min(a.damage, 200);
+                this.sprite_info["walk_speed"] = 10 + (10 * (1 - (this.health / this.maxHealth)))
+                a.hitEnemies.push(this);
+            }
+        }
+
+        // mage projectiles — light stops on first hit, heavy pierces all (hits each once)
+        for (let i = mageProjectiles.length - 1; i >= 0; i--) {
+            let p = mageProjectiles[i];
+            if (p.hitEnemies.includes(this)) continue;
+
+            let pSize = p.type === "light" ? p.drawW : lerp(100, 300, p.ratio);
+            let px = p.x - pSize / 2;
+            let py = p.y - pSize / 2;
+
+            if (rectsOverlap(ex, ey, ew, ew, px, py, pSize, pSize)) {
+                this.health -= min(p.damage, 200);
+                p.hitEnemies.push(this);
+                if (p.type === "light") mageProjectiles.splice(i, 1);
+            }
+        }
+    }
+
+    jump() {
+        this.onGround = false;
+        this.state = "jumping";
+        this.yVel = -15;
+        this.y += this.yVel;
+    }
+
+}
+
 //class describing enemies
 class Enemy extends Entity {
 
@@ -339,6 +957,15 @@ class Enemy extends Entity {
         //for the environment
         //so excuse this bad code
         this.deathJump = -5;
+        if (enemy_type == "sml") {
+            this.sfx = enemy_sml_sfx;
+        } else if (enemy_type == "med") {
+            this.sfx = enemy_med_sfx;
+        } else if (enemy_type == "lar") {
+            this.sfx = enemy_lar_sfx;
+        } else if (enemy_type == "boss") {
+            this.sfx = boss_atk_sfx;
+        }
     }
 
     setAbleToJump() {
@@ -435,7 +1062,8 @@ class Enemy extends Entity {
                 this.health = 60;
                 this.maxHealth = 60;
                 this.ableToJump = true;
-                this.attackSpeed = 0.07
+                this.attackSpeed = 0.07;
+                this.sfx = enemy_sml_sfx;
                 break;
             case "med":
                 this.sprite_info = {
@@ -459,6 +1087,7 @@ class Enemy extends Entity {
                 this.maxHealth = 100;
                 this.ableToJump = true;
                 this.attackSpeed = 0.06
+                this.sfx = enemy_med_sfx;
 
                 break;
             case "lar":
@@ -483,6 +1112,7 @@ class Enemy extends Entity {
                 this.maxHealth = 200;
                 this.ableToJump = false;
                 this.attackSpeed = 0.03
+                this.sfx = enemy_lar_sfx;
                 break;
 
             case "boss":
@@ -507,6 +1137,7 @@ class Enemy extends Entity {
                 this.maxHealth = 300;
                 this.ableToJump = false;
                 this.attackSpeed = 0.01
+                this.sfx = boss_atk_sfx;
                 break;
         }
         this.img0 = loadImage(this.sprite_info["sheet"]);
@@ -625,6 +1256,8 @@ class Enemy extends Entity {
                 }
                 if (this.enemy_frame > this.sprite_info["atk_end"]) {
                     this.enemy_frame = this.sprite_info["atk_start"];
+                    if (!this.sfx.isPlaying()) this.sfx.play();
+
                 }
                 break;
 
@@ -981,6 +1614,36 @@ function enemyHitboxer(enemyX, enemyY, enemySize, enemyType, enemyFrame, directi
                 //rect(enemyX, enemyY + sizeCutY, enemySize - (sizeCutX), ((enemySize * 7) / 8) - sizeCutY)
                 enemyHitboxCheck(enemyX, enemyY + sizeCutY, enemySize - (sizeCutX), ((enemySize * 7) / 8) - sizeCutY, damage)
             }
+        }
+    } else if (enemyType === "boss") {
+        if (floor(enemyFrame) == 5) {
+            if (direction == 1) {
+                fill(255, 0, 0, 100)
+                let yCut = (enemyY / 8)
+                /*rect(enemyX + (enemySize / 7), enemyY + yCut, enemySize / 5, (enemySize / 3))
+                rect(enemyX + (enemySize/ 2) - (enemySize / 32), enemyY, enemySize / 5, (enemySize / 3))
+                rect(enemyX + ((enemySize * 2) / 3) + (enemySize / 30), enemyY + yCut, enemySize / 5, (enemySize / 3))*/
+                enemyHitboxCheck(enemyX + (enemySize / 7), enemyY + yCut, enemySize / 5, (enemySize / 3), 35)
+                enemyHitboxCheck(enemyX + (enemySize/ 2) - (enemySize / 32), enemyY, enemySize / 5, (enemySize / 3), 35)
+                enemyHitboxCheck(enemyX + ((enemySize * 2) / 3) + (enemySize / 30), enemyY + yCut, enemySize / 5, (enemySize / 3), 35)
+            } else {
+                fill(255, 0, 0, 100)
+                let yCut = (enemyY / 8)
+                /*rect(enemyX + ((enemySize * 22) / 35), enemyY + yCut, enemySize / 5, (enemySize / 3))
+                rect(enemyX + ((enemySize) / 3), enemyY, enemySize / 5, (enemySize / 3))
+                rect(enemyX + (enemySize / 10), enemyY + yCut, enemySize / 5, (enemySize / 3))*/
+                enemyHitboxCheck(enemyX + ((enemySize * 22) / 35), enemyY + yCut, enemySize / 5, (enemySize / 3), 35)
+                enemyHitboxCheck(enemyX + ((enemySize) / 3), enemyY, enemySize / 5, (enemySize / 3), 35)
+                enemyHitboxCheck(enemyX + (enemySize / 10), enemyY + yCut, enemySize / 5, (enemySize / 3), 35)
+            }
+        } else if (floor(enemyFrame) == 6) {
+            fill(255, 0, 0, 100)
+            //rect(enemyX + (enemySize / 8), enemyY + (enemySize / 6), (enemySize * 3) / 4, (enemySize * 5) / 6)
+            enemyHitboxCheck(enemyX + (enemySize / 8), enemyY + (enemySize / 6), (enemySize * 3) / 4, (enemySize * 5) / 6, 35)
+        } else if (floor(enemyFrame > 6)) {
+            fill(255, 0, 0, 100)
+            //rect(enemyX + (enemySize / 8), enemyY + ((enemySize * 2) / 3), (enemySize * 3) / 4, (enemySize) / 3)
+            enemyHitboxCheck(enemyX + (enemySize / 8), enemyY + ((enemySize * 2) / 3), (enemySize * 3) / 4, (enemySize) / 3, 35)
         }
     }
 }
