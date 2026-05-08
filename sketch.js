@@ -1091,6 +1091,8 @@ function draw() {
 
   let musicMul = musicVolumeSlider.value() / 100;
   for (let t of musicTrack) t.sound.setVolume(t.base * musicMul);
+  for (let a of barPlaylist) a.setVolume(0.4 * musicMul);
+
 
   let sfxMul = sfxVolumeSlider.value() / 100;
   for (let t of sfxTrack) t.sound.setVolume(t.base * sfxMul);
@@ -1114,14 +1116,12 @@ function draw() {
   }
   prevMouseIsPressedState = mouseIsPressed;
 
+
   fill(0, 0, 0)
-  rect(-(width / 20), 0, (width / 20), height)
-  rect((width - (width / 4)), 0, (width / 20), height)
-  fill(255, 255, 255)
-  textSize(30)
-  //text(canFindTimer("sprint"), playerX - cameraX, height / 2)
-  fill(255, 255, 255)
-  textSize(30)
+  rect(-(window.width / 20), 0, (window.width / 20), window.height)
+  rect((GAME_W), 0, (window.width / 20), window.height)
+  //console.log(GAME_W);
+
   
   //text(timers.length, playerX - cameraX, height / 2)
   
@@ -2428,14 +2428,32 @@ function drawQuitScreen() {
 }
 
 function pauseCheck() {
+  //image(pauseSnapshot, 0, 0, GAME_W, GAME_H);
   if (pauseSnapshot) {
       image(pauseSnapshot, 0, 0, GAME_W, GAME_H);
     } else {
       // first paused frame, draw world, including enemies, then snapshot
-      drawIntroWorld();
+      if (gameState == "introLevel") {
+        drawIntroWorld();
+      } 
+      if (gameState == "introForest") {
+        drawIntroForest();
+      }
+      if (gameState == "townLevel") {
+        drawVillageWorld();
+      }
+      if (gameState == "bossLevel") {
+        bossRoom();
+      }
+      if (gameState == "tavernLevel") {
+        drawTavernRoom();
+      }
+      if (gameState == "dungeonLevel") {
+        bossRoom();
+      }
       drawPlayer();
       drawMageProjectiles();
-      drawIntroTopUI();
+      //drawIntroTopUI();
       drawHUD();
       if (isDialogue) drawIntroDialogueBox();
       frameCalls();
@@ -2849,11 +2867,11 @@ function updatePlayer() {
     }
 
     if (!onGround) {
-      currentFrame = 1;
+      currentFrame = 4;
     } else if (moving) {
       animTimer++;
       if (animTimer % 8 === 0) moveFrameIndex = (moveFrameIndex + 1) % 3;
-      currentFrame = 2 + moveFrameIndex;
+      currentFrame = 5 + moveFrameIndex;
     } else {
       currentFrame = 0;
       moveFrameIndex = 0;
@@ -2862,6 +2880,7 @@ function updatePlayer() {
   } else {
     if (sprinting) {
       playerX += sprintVel;
+      currentFrame = 2;
     } else if (!onGround) {
       playerY += sin(frameCount * 0.3)
     }
@@ -2902,6 +2921,8 @@ function updatePlayer() {
     if (selectedClass === "Mage") {
       let prev = magic;
       if (isFocusing) {
+        currentFrame = 3;
+        magic = min(maxMagic, magic + 0.4);
         magic = min(maxMagic, magic + 1.2);
         if (gameState === "bossLevel") {
           magic = min(maxMagic, magic + 1.2);
@@ -2920,6 +2941,8 @@ function updatePlayer() {
     } else {
       let prev = stamina;
       if (isFocusing) {
+        currentFrame = 3;
+        stamina = min(maxStamina, stamina + 0.4);
         stamina = min(maxStamina, stamina + 1.2);
         if (gameState === "bossLevel") {
           stamina = min(maxStamina, stamina + 1.2);
@@ -3043,7 +3066,7 @@ function spawnLightMageProjectile() {
     animTimer: 0,
     hitEnemies: []
   });
-}ƒ
+}
 
 function fireHeavyMageProjectile() {
   if (chargeTime <= 0) return;
@@ -3219,10 +3242,10 @@ function drawChargeEffect() {
 }
 
 function mousePressed() {
-  if (gameState == "introForest") {
-    console.log(mouseX);
-    console.log(mouseY);
-  }
+  // if (gameState == "introForest") {
+  //   console.log(mouseX);
+  //   console.log(mouseY);
+  // }
 
   // 1. keymap screen swallows clicks before anything else
   let inKeyMapping = (gameState === "keyMapping") || (isPaused && pauseSubScreen === "keymap");
