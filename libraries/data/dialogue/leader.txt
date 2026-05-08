@@ -2,7 +2,6 @@
 #Town Leader: Normally I would introduce you to all our wonderful residents and their crafts, but all of that is currently at stake.
 #Town Leader: We've recieved word from just outside the village that an army of goblins is on their way here.
 #Town Leader: I suggest you move on in your travels and find somewhere safer. I'm afraid we don't have the power to put up much of a fight.
-~
 =Player: [Well good luck with that...|I'll help you!]
 8
 32
@@ -17,9 +16,9 @@
 #N: Your heart starts to beat, fast, your vision blurs, you start to sweat, your nerves wired.
 #N: You pass out, or at least you think you do.
 #N: You feel the summation of a lifetime wasted all at once.
-#N: You see yourself slaving away for a hollow purpose others have convinced you to care about.
-#N: You hear spark for life crying out as you extinguish it under a shiny corperate shoe.
-#N: You watch from outside yourself as people in your life pretend that you are still yourself as they slowly drift away.
+#N: You see yourself slaving away for an empty purpose others have convinced you to care about.
+#N: You hear your spark for life crying out as you extinguish it under a shiny corperate shoe.
+#N: You watch from outside yourself as people in your life pretend that you are still yourself, as they slowly drift away.
 #N: You see yourself as a perfect plastic sculpture, with shiny shoes and shiny clothes and shiny skin and a shiny soul.
 #N1: Suddenly, you feel hands on your shoulders keeping you up, and the image of the town leader's worried face in front of you.
 #Town Leader: Are you alright, young one? You look as if you had died!
