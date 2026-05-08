@@ -918,8 +918,7 @@ function draw() {
 
     drawBossLevel();
     if (enemyWaves == 0 && playerX > (GAME_W / 6)) {
-      spawnEnemy("boss", "right");
-    if (enemyWaves == 0 && playerX > (width / 6)) {
+      //spawnEnemy("boss", "right");
       //spawnEnemy("lar", "right");
       //spawnEnemy("boss", "right");
       //spawnEnemy("boss", "right");
@@ -931,7 +930,7 @@ function draw() {
     if (enemyWaves >= 1 && enemiesAlive <= 0) {
       initCreditsScreen();
     }
-
+    
   } else if (gameState === "creditsScreen") {
     drawCreditsScreen();
 
