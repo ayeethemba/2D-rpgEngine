@@ -1333,7 +1333,7 @@ const CREDITS_ROLL = [
   { text: "G A M E   C R E D I T S",         size: 18, style: 'bold', col: [255, 230, 140], gap: 48 },
   { text: "Creative Director",                size: 12, col: [160, 155, 180], gap: 6  },
   { text: "Nathan Dubuc",                    size: 17, style: 'bold', col: [230, 220, 255], gap: 6  },
-  { text: "Head Story & Mechanics Development", size: 12, col: [140, 135, 160], gap: 44 },
+  { text: "Head Story, Music, & Mechanics Development", size: 12, col: [140, 135, 160], gap: 44 },
   { text: "Combat Director",                  size: 12, col: [160, 155, 180], gap: 6  },
   { text: "Themba Chika",                     size: 17, style: 'bold', col: [230, 220, 255], gap: 6  },
   { text: "Head Combat & Systems Development", size: 12, col: [140, 135, 160], gap: 44 },
