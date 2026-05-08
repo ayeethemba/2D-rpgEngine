@@ -779,7 +779,7 @@ function draw() {
       //spawnEnemy("med", "right")
       enemyWaves++;
       //initTownLevel()
-      initBossLevel()
+      //initBossLevel()
       //initTownLevel()
     }
     if (playerX > worldWidth - (worldWidth / 16)) {
@@ -2954,7 +2954,7 @@ function drawPlayer() {
   //if (gameState === "townLevel") return;
   let screenX = playerX - cameraX;
   fill(255, 255, 255)
-  text(entities.length + ", " + entityCount + " used.", screenX, playerY - 150)
+  //text(entities.length + ", " + entityCount + " used.", screenX, playerY - 150)
   let sx = currentFrame * frameWidth;
   fill(255, 255, 255)
   textSize(30)
