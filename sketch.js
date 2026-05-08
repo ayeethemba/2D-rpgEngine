@@ -735,8 +735,8 @@ sfxTrack = [
   { sound: enemy_sml_sfx,   base: 0.7},
   { sound: enemy_med_sfx,   base: 0.7},
   { sound: enemy_lar_sfx,   base: 0.7},
-  { sound: boss_spawn_sfx,   base: 0.8},
-  { sound: boss_atk_sfx,   base: 0.8}
+  { sound: boss_spawn_sfx,   base: 0.7},
+  { sound: boss_atk_sfx,   base: 0.7}
 ];
 }
 
@@ -1220,28 +1220,28 @@ function initBossLevel() {
 
 }
 
-function devSkipToTavern() {
-  if (!selectedClass) selectedClass = "Melee";
-  let spritePath = selectedClass === "Mage"
-    ? "sprites/sprint2/mage_class_320x320.png"
-    : "sprites/sprint2/melee_class_320x320.png";
-  spriteSheet = loadImage(spritePath);
-  playerTalkSprite = selectedClass === "Mage" ? mageSprite : meleeSprite;
-  if (selectedClass === "Melee") {
-    atkLightSheet = loadImage("sprites/sprint2/melee_attack_320x160.png");
-    atkHeavySheet = loadImage("sprites/sprint2/heavy_melee_atk_320x320.png");
-  } else {
-    atkLightSheet = loadImage("sprites/sprint2/light_spell_atk_320x320.png");
-    atkHeavySheet = loadImage("sprites/sprint2/heavy_spell_atk_320x320.png");
-  }
-  currentFrame = 0; moveFrameIndex = 0; animTimer = 0;
-  attackType = ""; attackFrame = 0; attackTimer = 0;
-  isCharging = false; chargeTime = 0;
-  velX = 0; velY = 0;
-  facingLeft = false; sprinting = false; canSprint = true; sprintVel = 0;
-  HP = maxHP; magic = maxMagic; stamina = maxStamina;
-  initTavernLevel();
-}
+// function devSkipToTavern() {
+//   if (!selectedClass) selectedClass = "Melee";
+//   let spritePath = selectedClass === "Mage"
+//     ? "sprites/sprint2/mage_class_320x320.png"
+//     : "sprites/sprint2/melee_class_320x320.png";
+//   spriteSheet = loadImage(spritePath);
+//   playerTalkSprite = selectedClass === "Mage" ? mageSprite : meleeSprite;
+//   if (selectedClass === "Melee") {
+//     atkLightSheet = loadImage("sprites/sprint2/melee_attack_320x160.png");
+//     atkHeavySheet = loadImage("sprites/sprint2/heavy_melee_atk_320x320.png");
+//   } else {
+//     atkLightSheet = loadImage("sprites/sprint2/light_spell_atk_320x320.png");
+//     atkHeavySheet = loadImage("sprites/sprint2/heavy_spell_atk_320x320.png");
+//   }
+//   currentFrame = 0; moveFrameIndex = 0; animTimer = 0;
+//   attackType = ""; attackFrame = 0; attackTimer = 0;
+//   isCharging = false; chargeTime = 0;
+//   velX = 0; velY = 0;
+//   facingLeft = false; sprinting = false; canSprint = true; sprintVel = 0;
+//   HP = maxHP; magic = maxMagic; stamina = maxStamina;
+//   initTavernLevel();
+// }
 
 function initTavernLevel() {
   stopMusic();
@@ -3875,7 +3875,7 @@ function updateRageProjectiles() {
 
     // hit detection against enemies
     for (let j = 0; j < entityCount; j++) {
-      if (entities[j].constructor !== Enemy) continue;
+      if (entities[j].constructor !== Enemy && entities[j].constructor !== Boss) continue;
       let e = entities[j];
       if (p.hitEnemies.includes(e)) continue;
       let info = e.sprite_info;
