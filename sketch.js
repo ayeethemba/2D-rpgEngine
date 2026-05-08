@@ -759,8 +759,16 @@ function draw() {
       rect(0, 0, GAME_W, GAME_H)
       blackFadeCount -= 5;
       if (blackFadeCount <= 0) {
+        /*let cross1 = new CrossAtk(GAME_W / 2, GAME_H / 2, 1)
+        let cross3 = new CrossAtk(10, GAME_H / 2, 1)
+        let cross2 = new CrossAtk(300, 200, 1)
+        let cross4 = new CrossAtk(30, GAME_H, 1)
+        let cross5 = new CrossAtk(300, GAME_H, 1)*/
         fadingFromBlack = false;
         skipDialogueButton.show();
+        //level1DevButton.show();
+        //testLevelButton.show();
+        //bossLevelButton.show();
         pauseMenuButton.show();
         blackFadeCount = 500;
         //enemyWaves = 0;
@@ -770,13 +778,15 @@ function draw() {
       //spawnEnemy("lar", "right")
       //spawnEnemy("med", "right")
       enemyWaves++;
-      //initBossLevel()
+      //initTownLevel()
+      initBossLevel()
       //initTownLevel()
     }
     if (playerX > worldWidth - (worldWidth / 16)) {
       playerX = 10;
       cameraX = 0;
       enemyWaves = 0;
+      cleanEntities()
       gameState = "introForest"
       worldWidth = 4960
       forestEnemiesSpawned = false;
@@ -855,28 +865,42 @@ function draw() {
       spawnWave("sml", 10)
       enemyGameState = "duringRaid"
     } else if (enemiesAlive <= 0 && enemyWaves == 1) {
+      cleanEntities()
       spawnWave("sml", 7)
       spawnWave("med", 4)
       enemyWaves++
-    } else if (enemiesAlive <= 3 && enemyWaves == 2) {
-      spawnWave("sml", 10)
+    } else if (enemiesAlive <= 0 && enemyWaves == 2) {
+      cleanEntities()
+      spawnWave("sml", 7)
       spawnWave("med", 5)
       spawnWave("lar", 2)
       enemyWaves++
-    } else if (enemiesAlive <= 3 && enemyWaves == 3) {
-      spawnWave("sml", 10)
-      spawnWave("med", 7)
+    } else if (enemiesAlive <= 0 && enemyWaves == 3) {
+      cleanEntities()
+      spawnWave("sml", 5)
+      spawnWave("med", 5)
       spawnWave("lar", 3)
       enemyWaves++
-    } else if (enemiesAlive <= 3 && enemyWaves == 4) {
+    } else if (enemiesAlive <= 0 && enemyWaves == 4) {
+      cleanEntities()
       spawnWave("sml", 5)
       spawnWave("med", 8)
       spawnWave("lar", 2)
       enemyWaves++
-    } else if (enemiesAlive <= 3 && enemyWaves == 5) {
+    } else if (enemiesAlive <= 0 && enemyWaves == 5) {
+      cleanEntities()
+      spawnWave("sml", 10)
+      enemyWaves++
+    } else if (enemiesAlive <= 5 && enemyWaves == 5) {
+      cleanEntities()
+      spawnWave("sml", 10)
+      enemyWaves++
+    } else if (enemiesAlive <= 0 && enemyWaves == 5) {
+      cleanEntities()
       spawnWave("sml", 10)
       enemyWaves++
     } else if (enemiesAlive <= 0 && enemyWaves == 6) {
+      cleanEntities()
       enemyGameState = "postRaid"
     }
     /*if (mouseIsPressed && frameWait <= 0) {
@@ -895,6 +919,13 @@ function draw() {
     drawBossLevel();
     if (enemyWaves == 0 && playerX > (GAME_W / 6)) {
       spawnEnemy("boss", "right");
+    if (enemyWaves == 0 && playerX > (width / 6)) {
+      //spawnEnemy("lar", "right");
+      //spawnEnemy("boss", "right");
+      //spawnEnemy("boss", "right");
+      //spawnEnemy("lar", "right");
+      let boss = new Boss()
+      //let cross = new CrossAtk(100, 100, 1)
       enemyWaves++;
     }
     if (enemyWaves >= 1 && enemiesAlive <= 0) {
@@ -1109,7 +1140,7 @@ function initTownLevel() {
   musicTown.loop()
   gameState = "townLevel"
   let traderNPC = new NPC(0, "trader", 300, drawSize / 320, gameState)
-  let villageLeaderNPC = new NPC(5, "leader", 1000, drawSize / 320, gameState)
+  let villageLeaderNPC = new NPC(5, "leader", 2000, drawSize / 320, gameState)
   updateUI();
 }
 
@@ -1126,6 +1157,7 @@ function stopMusic() {
 
 function initBossLevel() {
 
+  cleanEntities()
   worldWidth = 3200
   playerX = 10;
   cameraX = 0;
@@ -1139,6 +1171,7 @@ function initBossLevel() {
   isRageMode = false; rageModeTimer = 0;
   musicBoss.loop();
   gameState = "bossLevel";
+  //let boss = new Boss();
   enemyWaves = 0;
   rageProjectiles = [];
   updateUI();
@@ -1440,17 +1473,34 @@ function keyPressed() {
     sfxLightMage.play();
     magic = max(0, magic - 10);
   }*/
+ if (keyPressMatches("heavyAttack", keyCode) && attackType === "" && !isCharging) {
+    if (selectedClass === "Mage") {
+      if (!canFindTimer("heavyAtk")) {
+        let heavyTimer = new Timer(25, "heavyAtk")
+        triggerHeavyAttack();
+      }
+    } else {
+      triggerHeavyAttack();
+    }
+    return;
+  }
+  
   if (keyPressMatches("focus", keyCode)) {
     if (isCharging) {
       fireHeavyMageProjectile();
       isCharging = false;
       chargeTime = 0;
     }
-    if ((selectedClass === "Mage" && magic < maxMagic - 5) || (selectedClass === "Melee" && stamina < maxStamina)) {
+    attackType = ""
+    if ((selectedClass === "Mage" && magic < maxMagic - 5) || ((selectedClass === "Melee" && stamina < maxStamina) && onGround)) {
       isFocusing = true
       if (chargingSound) { chargingSound.rate(1.5); chargingSound.loop(); }
       magic = min(maxMagic, magic + 0.5);
       stamina = min(maxStamina, stamina + 0.5);
+      if (gameState === "bossLevel") {
+        magic = min(maxMagic, magic + 0.5);
+        stamina = min(maxStamina, stamina + 0.5);
+      }
       return;
     } else {
       isFocusing = false
@@ -1465,17 +1515,7 @@ function keyPressed() {
     return;
   }
 
-  if (keyPressMatches("heavyAttack", keyCode) && attackType === "" && !isCharging) {
-    if (selectedClass === "Mage") {
-      if (!canFindTimer("heavyAtk")) {
-        let heavyTimer = new Timer(25, "heavyAtk")
-        triggerHeavyAttack();
-      }
-    } else {
-      triggerHeavyAttack();
-    }
-    return;
-  }
+  
 
   
 
@@ -1498,9 +1538,9 @@ function keyPressed() {
       sprinting = true;
       canSprint = false;
       if (facingLeft) {
-        sprintVel = -15
+        sprintVel = -17
       } else {
-        sprintVel = 15
+        sprintVel = 17
       }
     }
     return;
@@ -2428,6 +2468,7 @@ function drawIntroLevelScreen() {
   if (fadingFromBlack) {
     skipDialogueButton.hide();
     pauseMenuButton.hide();
+    
     return;
   }
   if (isDialogue) drawIntroDialogueBox();
@@ -2844,24 +2885,36 @@ function updatePlayer() {
       let prev = magic;
       if (isFocusing) {
         magic = min(maxMagic, magic + 0.4);
+        if (gameState === "bossLevel") {
+          magic = min(maxMagic, magic + 0.5);
+        }
         if (magic == maxMagic) {
           isFocusing = false;
           if (chargingSound) chargingSound.stop()
         }
       } else {
-        magic = min(maxMagic, magic + 0.15);
+        magic = min(maxMagic, magic + 0.05);
+        if (gameState === "bossLevel") {
+          magic = min(maxMagic, magic + 0.05);
+        }
       }
       if (prev < maxMagic && magic >= maxMagic && sfxBarFull) sfxBarFull.play();
     } else {
       let prev = stamina;
       if (isFocusing) {
         stamina = min(maxStamina, stamina + 0.4);
+        if (gameState === "bossLevel") {
+          stamina = min(maxStamina, stamina + 0.5);
+        }
         if (stamina == maxStamina) {
           isFocusing = false;
           if (chargingSound) chargingSound.stop()
         }
       } else {
-        stamina = min(maxStamina, stamina + 0.15);
+        stamina = min(maxStamina, stamina + 0.05);
+        if (gameState === "bossLevel") {
+          stamina = min(maxStamina, stamina + 0.05);
+        }
         
       }
       if (prev < maxStamina && stamina >= maxStamina && sfxBarFull) sfxBarFull.play();
@@ -2871,6 +2924,7 @@ function updatePlayer() {
   if (HP < maxHP) {
       let prevHP = HP;
       HP = min(maxHP, HP + 0.03);
+      if (gameState === "bossLevel") HP = min(maxHP, HP + 0.02)
       if (prevHP < maxHP && HP >= maxHP && sfxBarFull) sfxBarFull.play();
   }
 
@@ -2900,7 +2954,8 @@ function drawPlayer() {
   if (!spriteSheet) return;
   //if (gameState === "townLevel") return;
   let screenX = playerX - cameraX;
-  //text("Charging: " + isCharging + " attack: " + attackType, screenX, playerY + 30)
+  fill(255, 255, 255)
+  text(entities.length + ", " + entityCount + " used.", screenX, playerY - 150)
   let sx = currentFrame * frameWidth;
   fill(255, 255, 255)
   textSize(30)
@@ -3449,20 +3504,20 @@ function drawIntroTopUI() {
   let y = 25;
 
   fill(10, 12, 18, 190);
-  rect(x, y, panelW, panelH, 12);
+  //rect(x, y, panelW, panelH, 12);
 
   fill(255, 255, 255, 10);
-  rect(x + 4, y + 4, panelW - 8, panelH - 8, 10);
+  //rect(x + 4, y + 4, panelW - 8, panelH - 8, 10);
 
   fill(240, 240, 246);
   textAlign(LEFT, TOP);
   textFont("Georgia");
   textSize(16);
-  text("Objective", x + 16, y + 12);
+  //text("Objective", x + 16, y + 12);
 
   fill(214, 214, 226);
   textSize(14);
-  text(introObjective, x + 16, y + 36);
+  //text(introObjective, x + 16, y + 36);
 }
 
 function drawIntroDialogueBox() {
@@ -3657,7 +3712,7 @@ function tryJump() {
 }
 
 function triggerLightAttack() {
-  if (stamina <= 5 || magic <= 5) return;
+  if ((selectedClass === "Melee" && stamina <= 5) || (magic <= 5 && selectedClass === "Mage")) return;
   if (isCharging) return;
   if (isDialogue) return;
   if (attackType !== "") return;
@@ -3673,7 +3728,7 @@ function triggerLightAttack() {
 
 function triggerHeavyAttack() {
   if (attackType !== "" || isCharging) return;
-  if (magic <= 15 || stamina <= 15) return;
+  if ((selectedClass === "Melee" && stamina <= 15) || (magic <= 15 && selectedClass === "Mage")) return;
 
   if (selectedClass === "Mage") {
     magic = max(0, magic - 30)

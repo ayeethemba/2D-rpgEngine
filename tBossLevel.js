@@ -116,7 +116,7 @@ function buildDungeonPlatforms() {
 
 function seedEmbers() {
   emberParticles = [];
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 40; i++) {
     emberParticles.push({
       x: random(worldWidth),
       y: random(60, height - 140),
