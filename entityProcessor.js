@@ -5,6 +5,7 @@ let timers = [];
 let playerJustLanded = false;
 let waitingToLand = false;
 let diaCounter = 0
+let crossCount = 0
 
 
 function rectsOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
@@ -435,7 +436,9 @@ class CrossAtk extends Entity {
         //rect(this.hitboxQuad[0].x, this.hitboxQuad[0].y, this.hitboxQuad[2].x, this.hitboxQuad[2].y)
         //enemyHitboxCheck(this.hitboxQuad[0].x, this.hitboxQuad[0].y, this.hitboxQuad[2].x, this.hitboxQuad[2].y, 10)
         //rect(crossX + (this.displaySize / 4), this.y + (this.displaySize / 4), this.displaySize / 2, this.displaySize / 2)
-        enemyHitboxCheck(crossX + (this.displaySize / 4), this.y + (this.displaySize / 4), this.displaySize / 2, this.displaySize / 2, 15)
+        if (abs(this.x - playerX) < 50 && abs(this.y - playerY)) {
+            enemyHitboxCheck(crossX + (this.displaySize / 4), this.y + (this.displaySize / 4), this.displaySize / 2, this.displaySize / 2, 25)
+        }
     }
     
 }
@@ -753,6 +756,7 @@ class Boss extends Entity {
                     let newCross = new CrossAtk(this.x + (this.bossDrawSize/ 2), this.y - ((this.bossDrawSize * 3) / 4), 1)
                     let newCross1 = new CrossAtk(this.x + (this.bossDrawSize/ 3), this.y - ((this.bossDrawSize * 3) / 4), 0)
                     let newCross2 = new CrossAtk(this.x + ((this.bossDrawSize * 2) / 3), this.y - ((this.bossDrawSize * 3) / 4), 2)
+                    crossCount += 3
                     this.madeCross = true
                 }
                 if (this.enemy_frame > floor(this.sprite_info["range_atk_end"])) {
@@ -1601,6 +1605,7 @@ function enemyHitboxer(enemyX, enemyY, enemySize, enemyType, enemyFrame, directi
             }
         }
     } else if (enemyType === "boss") {
+        let damage = 50
         if (floor(enemyFrame) == 5) {
             if (direction == 1) {
                 fill(255, 0, 0, 100)
@@ -1608,27 +1613,27 @@ function enemyHitboxer(enemyX, enemyY, enemySize, enemyType, enemyFrame, directi
                 /*rect(enemyX + (enemySize / 7), enemyY + yCut, enemySize / 5, (enemySize / 3))
                 rect(enemyX + (enemySize/ 2) - (enemySize / 32), enemyY, enemySize / 5, (enemySize / 3))
                 rect(enemyX + ((enemySize * 2) / 3) + (enemySize / 30), enemyY + yCut, enemySize / 5, (enemySize / 3))*/
-                enemyHitboxCheck(enemyX + (enemySize / 7), enemyY + yCut, enemySize / 5, (enemySize / 3), 35)
-                enemyHitboxCheck(enemyX + (enemySize/ 2) - (enemySize / 32), enemyY, enemySize / 5, (enemySize / 3), 35)
-                enemyHitboxCheck(enemyX + ((enemySize * 2) / 3) + (enemySize / 30), enemyY + yCut, enemySize / 5, (enemySize / 3), 35)
+                enemyHitboxCheck(enemyX + (enemySize / 7), enemyY + yCut, enemySize / 5, (enemySize / 3), damage)
+                enemyHitboxCheck(enemyX + (enemySize/ 2) - (enemySize / 32), enemyY, enemySize / 5, (enemySize / 3), damage)
+                enemyHitboxCheck(enemyX + ((enemySize * 2) / 3) + (enemySize / 30), enemyY + yCut, enemySize / 5, (enemySize / 3), damage)
             } else {
                 fill(255, 0, 0, 100)
                 let yCut = (enemyY / 8)
                 /*rect(enemyX + ((enemySize * 22) / 35), enemyY + yCut, enemySize / 5, (enemySize / 3))
                 rect(enemyX + ((enemySize) / 3), enemyY, enemySize / 5, (enemySize / 3))
                 rect(enemyX + (enemySize / 10), enemyY + yCut, enemySize / 5, (enemySize / 3))*/
-                enemyHitboxCheck(enemyX + ((enemySize * 22) / 35), enemyY + yCut, enemySize / 5, (enemySize / 3), 35)
-                enemyHitboxCheck(enemyX + ((enemySize) / 3), enemyY, enemySize / 5, (enemySize / 3), 35)
-                enemyHitboxCheck(enemyX + (enemySize / 10), enemyY + yCut, enemySize / 5, (enemySize / 3), 35)
+                enemyHitboxCheck(enemyX + ((enemySize * 22) / 35), enemyY + yCut, enemySize / 5, (enemySize / 3), damage)
+                enemyHitboxCheck(enemyX + ((enemySize) / 3), enemyY, enemySize / 5, (enemySize / 3), damage)
+                enemyHitboxCheck(enemyX + (enemySize / 10), enemyY + yCut, enemySize / 5, (enemySize / 3), damage)
             }
         } else if (floor(enemyFrame) == 6) {
             fill(255, 0, 0, 100)
             //rect(enemyX + (enemySize / 8), enemyY + (enemySize / 6), (enemySize * 3) / 4, (enemySize * 5) / 6)
-            enemyHitboxCheck(enemyX + (enemySize / 8), enemyY + (enemySize / 6), (enemySize * 3) / 4, (enemySize * 5) / 6, 35)
+            enemyHitboxCheck(enemyX + (enemySize / 8), enemyY + (enemySize / 6), (enemySize * 3) / 4, (enemySize * 5) / 6, damage)
         } else if (floor(enemyFrame > 6)) {
             fill(255, 0, 0, 100)
             //rect(enemyX + (enemySize / 8), enemyY + ((enemySize * 2) / 3), (enemySize * 3) / 4, (enemySize) / 3)
-            enemyHitboxCheck(enemyX + (enemySize / 8), enemyY + ((enemySize * 2) / 3), (enemySize * 3) / 4, (enemySize) / 3, 35)
+            enemyHitboxCheck(enemyX + (enemySize / 8), enemyY + ((enemySize * 2) / 3), (enemySize * 3) / 4, (enemySize) / 3, damage)
         }
     }
 }

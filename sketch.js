@@ -63,6 +63,8 @@ let startButton;
 let settingsButton;
 let quitButton;
 let devSkipBarButton;
+let devSkiptoBoss
+let bossSkipping = false
 let backButton;
 
 let isPaused = false;
@@ -423,6 +425,14 @@ function setup() {
     updateUI();
   });
 
+  devSkiptoBoss = createMainMenuButton("[DEV] Skip to Boss", 0, 0, function() {
+    bossSkipping = true
+    devSkiptoBoss.hide()
+    
+  });
+  devSkiptoBoss.style('font-size', '12px');
+  devSkiptoBoss.style('opacity', '0.7');
+
   devSkipBarButton = createMainMenuButton("[DEV] Skip to Bar", 0, 0, function() {
     devSkipToTavern();
   });
@@ -720,7 +730,7 @@ sfxTrack = [
 }
 
 function draw() {
-
+  clear()
   background(0);
   translate(scaleOffsetX, scaleOffsetY);
   scale(scaleFactor);
@@ -744,7 +754,7 @@ function draw() {
   }
 
   
-  if (gameState !== "introLevel" && gameState !== "introForest" && gameState !== "townLevel" && gameState !== "bossLevel" && gameState !== "tavernLevel" && gameState !== "dungeonLevel" && gameState !== "creditsScreen") drawFantasyBackground();
+  if (gameState === "music" || gameState === "menu" || gameState === "poem" || gameState === "classSelect") drawFantasyBackground();
 
   if (gameState === "menu") {
     drawMenuPanel();
@@ -782,7 +792,7 @@ function draw() {
       //spawnEnemy("med", "right")
       enemyWaves++;
       //initTownLevel()
-      //initBossLevel()
+      if (bossSkipping) initBossLevel()
       //initTownLevel()
     }
     if (playerX > worldWidth - (worldWidth / 16)) {
@@ -1089,13 +1099,14 @@ function draw() {
 
   outputVolume(masterVolumeSlider.value() / 100);
 
-  let musicMul = musicVolumeSlider.value() / 100;
-  for (let t of musicTrack) t.sound.setVolume(t.base * musicMul);
-  for (let a of barPlaylist) a.setVolume(0.4 * musicMul);
+  if (gameState === "settings") {
+    let musicMul = musicVolumeSlider.value() / 100;
+    for (let t of musicTrack) t.sound.setVolume(t.base * musicMul);
+    for (let a of barPlaylist) a.setVolume(0.4 * musicMul);
 
-
-  let sfxMul = sfxVolumeSlider.value() / 100;
-  for (let t of sfxTrack) t.sound.setVolume(t.base * sfxMul);
+    let sfxMul = sfxVolumeSlider.value() / 100;
+    for (let t of sfxTrack) t.sound.setVolume(t.base * sfxMul);
+  }
 
   // arm rebind/keymap capture once the triggering click is released
   if (!mouseIsPressed) {
@@ -1157,6 +1168,7 @@ function initTownLevel() {
   stopMusic();
   musicTown.loop()
   gameState = "townLevel"
+  clear()
   let traderNPC = new NPC(0, "trader", 300, drawSize / 320, gameState)
   let villageLeaderNPC = new NPC(5, "leader", 2000, drawSize / 320, gameState)
   updateUI();
@@ -1176,6 +1188,7 @@ function stopMusic() {
 function initBossLevel() {
 
   cleanEntities()
+  clear()
   worldWidth = 3200
   playerX = 10;
   cameraX = 0;
@@ -1256,6 +1269,7 @@ function initDungeonLevel() {
   groundY = (GAME_H * 13 / 16) - drawSize;
   enemyWaves = 0;
   gameState = "dungeonLevel";
+  clear()
   musicGirei.loop();
   rageProjectiles = [];
   updateUI();
@@ -1583,6 +1597,12 @@ function keyPressed() {
 function initMusic() {
   musicIntro.setVolume(0.4);
   musicIntro.loop();
+  let musicMul = musicVolumeSlider.value() / 100;
+    for (let t of musicTrack) t.sound.setVolume(t.base * musicMul);
+    for (let a of barPlaylist) a.setVolume(0.4 * musicMul);
+    
+    let sfxMul = sfxVolumeSlider.value() / 100;
+    for (let t of sfxTrack) t.sound.setVolume(t.base * sfxMul);
 }
 
 function keyReleased() {
@@ -1602,8 +1622,8 @@ function initIntroLevel(skipDialogue = false) {
   introStage = skipDialogue ? 4 : 0;
   cameraX = 0;
 
-  HP = 300;
-  maxHP = 300;
+  HP = 150;
+  maxHP = 150;
   magic = 225;
   maxMagic = 225;
   stamina = 200;
@@ -2079,6 +2099,12 @@ function layoutMenuButtons() {
     devSkipBarButton.size(devW * scaleFactor, devH * scaleFactor);
     devSkipBarButton.position(toScreenX(GAME_W - devW - 12), toScreenY(GAME_H - devH - 12));
   }
+  if (devSkiptoBoss) {
+    let devW = 180;
+    let devH = 28;
+    devSkiptoBoss.size(devW * scaleFactor, devH * scaleFactor);
+    devSkiptoBoss.position(toScreenX(GAME_W - devW - 12), toScreenY(GAME_H - devH - devH - 12));
+  }
 }
 
 function layoutVolumeSliders() {
@@ -2243,6 +2269,7 @@ function updateUI() {
   } else if (gameState === "poem") {
     backButton.show();
   } else if (gameState === "classSelect") {
+    devSkiptoBoss.hide()
     backButton.show();
     mageButton.show();
     meleeButton.show();
@@ -2995,8 +3022,9 @@ function drawPlayer() {
   if (!spriteSheet) return;
   //if (gameState === "townLevel") return;
   let screenX = playerX - cameraX;
+  textSize(30)
   fill(255, 255, 255)
-  //text(entities.length + ", " + entityCount + " used.", screenX, playerY - 150)
+  //text(crossCount, screenX, playerY - 150)
   let sx = currentFrame * frameWidth;
   fill(255, 255, 255)
   textSize(30)
@@ -3071,7 +3099,7 @@ function spawnLightMageProjectile() {
 function fireHeavyMageProjectile() {
   if (chargeTime <= 0) return;
   let ratio = chargeTime / maxChargeTime;
-  let damage = lerp(15, 150, ratio);
+  let damage = lerp(15, 100, ratio);
   if (ratio >= 1.0) {
     damage = 9999999;
   }
