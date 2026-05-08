@@ -957,6 +957,15 @@ class Enemy extends Entity {
         //for the environment
         //so excuse this bad code
         this.deathJump = -5;
+        if (enemy_type == "sml") {
+            this.sfx = enemy_sml_sfx;
+        } else if (enemy_type == "med") {
+            this.sfx = enemy_med_sfx;
+        } else if (enemy_type == "lar") {
+            this.sfx = enemy_lar_sfx;
+        } else if (enemy_type == "boss") {
+            this.sfx = boss_atk_sfx;
+        }
     }
 
     setAbleToJump() {
@@ -1053,7 +1062,8 @@ class Enemy extends Entity {
                 this.health = 60;
                 this.maxHealth = 60;
                 this.ableToJump = true;
-                this.attackSpeed = 0.07
+                this.attackSpeed = 0.07;
+                this.sfx = enemy_sml_sfx;
                 break;
             case "med":
                 this.sprite_info = {
@@ -1077,6 +1087,7 @@ class Enemy extends Entity {
                 this.maxHealth = 100;
                 this.ableToJump = true;
                 this.attackSpeed = 0.06
+                this.sfx = enemy_med_sfx;
 
                 break;
             case "lar":
@@ -1101,6 +1112,7 @@ class Enemy extends Entity {
                 this.maxHealth = 200;
                 this.ableToJump = false;
                 this.attackSpeed = 0.03
+                this.sfx = enemy_lar_sfx;
                 break;
 
             case "boss":
@@ -1125,6 +1137,7 @@ class Enemy extends Entity {
                 this.maxHealth = 300;
                 this.ableToJump = false;
                 this.attackSpeed = 0.01
+                this.sfx = boss_atk_sfx;
                 break;
         }
         this.img0 = loadImage(this.sprite_info["sheet"]);
@@ -1243,6 +1256,8 @@ class Enemy extends Entity {
                 }
                 if (this.enemy_frame > this.sprite_info["atk_end"]) {
                     this.enemy_frame = this.sprite_info["atk_start"];
+                    if (!this.sfx.isPlaying()) this.sfx.play();
+
                 }
                 break;
 
