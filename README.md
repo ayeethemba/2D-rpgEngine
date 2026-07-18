@@ -43,12 +43,12 @@ Open index.html in your browser. No dependencies or installs required.
 Controls (** All Key Binds are mappable **):
 <!-- TODO: fill in (e.g. Arrow keys / WASD to move, X to attack, Z to interact) -->
 
-WAD - Movement
-S - Interact
-K - Heavy Atk
-J - Light Atk
-Shift - Sprint
-G - Special
+- WAD - Movement
+- S - Interact
+- K - Heavy Atk
+- J - Light Atk
+- Shift - Sprint
+- G - Special
 
 
 <!-- Once GitHub Pages is enabled (Settings → Pages → Deploy from branch → main), add:
