@@ -1,10 +1,11 @@
 That Time I Was an Office Worker and Put into a Coma by a Demon Sleep God
 
+▶ Play it in your browser
+
 A 2D side-scrolling RPG built with JavaScript and p5.js for CS 345 (Software Engineering)
 at James Madison University, Spring 2026. Forked from chaoaj/sp26_cs345_team03.
 
-
-![Gameplay demo](assets/gameplay.gif)
+Show Image
 
 About
 
@@ -16,13 +17,10 @@ My Contributions (Co-Lead, Combat Engine)
 
 Co-led the 5-person team: task breakdown, Git branching strategy, and keeping main stable across 133+ commits
 Built the combat engine: collision detection, hit resolution, enemy AI behaviors, and boss battle mechanics
+Developed attack animations and combat entities, including the damage calculation system
+Tuned combat balance and movement feel so fights stay responsive across light, heavy, and special attacks
+Contributed to creative direction: story beats and level structure
 
-- Developed attack animations and entities
-- Damage calculations and balanced character fluidity throughout
-- Co-led creative development, adding story and layers to the game.
-
-
-<!-- TODO: add 1-2 more specifics that are true, e.g. damage/knockback system, attack animations, enemy behavior state machine -->
 
 Architecture
 
@@ -36,32 +34,30 @@ JavaScript (p5.js) · HTML5/CSS3 · Git/GitHub
 
 How to Run
 
-bashgit clone https://github.com/ayeethemba/YOUR-FORK-NAME.git
+Play instantly in the browser via the link above, or run locally:
+
+bashgit clone https://github.com/ayeethemba/2D-rpgEngine.git
 
 Open index.html in your browser. No dependencies or installs required.
 
-Controls (** All Key Binds are mappable **):
-<!-- TODO: fill in (e.g. Arrow keys / WASD to move, X to attack, Z to interact) -->
+Controls
 
-- WAD - Movement
-- S - Interact
-- K - Heavy Atk
-- J - Light Atk
-- Shift - Sprint
-- G - Special
+All key binds are remappable.
 
+KeyActionW / A / DMoveSInteractJLight attackKHeavy attackGSpecialShiftSprint
 
-<!-- Once GitHub Pages is enabled (Settings → Pages → Deploy from branch → main), add:
-**[▶ Play it in your browser](https://ayeethemba.github.io/YOUR-FORK-NAME/)**
-and move that link up under the title. -->
 Team
 
 
-- Themba Chika — co-lead, combat engine
-- Kyla Carver - Level Design
-- Nathan Dubuc - Dialogue System & Head Creative Dev
-- Thomas Doby - Sound and SFX Dev
-- Finn Bernuy - Sprites and animations
+Themba Chika — co-lead, combat engine
+Kyla Carver — level design
+Nathan Dubuc — dialogue system, head creative dev
+Thomas Doby — sound and SFX
+Finn Bernuy — sprites and animations
+
+
 Credits
 
-<!-- TODO: if any sprites/sounds weren't made by the team, credit the sources here; if all custom, say "All sprites and sound effects created by the team." -->
+All sprites, animations, and sound effects created by the team.
+
+<!-- Confirm this is true; if any assets were borrowed (fonts, sound packs, sprite bases), credit the source here instead -->
