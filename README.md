@@ -1,6 +1,6 @@
 That Time I Was an Office Worker and Put into a Coma by a Demon Sleep God
 
-▶ Play it in your browser
+**[▶ Play it in your browser](https://ayeethemba.github.io/2D-rpgEngine/)**
 
 A 2D side-scrolling RPG built with JavaScript and p5.js for CS 345 (Software Engineering)
 at James Madison University, Spring 2026. Forked from chaoaj/sp26_cs345_team03.
